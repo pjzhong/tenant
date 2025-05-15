@@ -15,7 +15,7 @@ import org.example.common.ThreadCommonResource;
 import org.example.common.handler.ConnectionManagerHandler;
 import org.example.common.util.NettyEventLoopUtil;
 import org.example.net.codec.MessageCodec;
-import org.example.net.handler.DispatcherHandler;
+import org.example.net.handler.DispatcherNettyInboundHandler;
 import org.example.world.WorldConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,12 +30,12 @@ public class WorldServer implements AutoCloseable {
 
   private WorldConfig config;
   private ThreadCommonResource threadCommonResource;
-  private DispatcherHandler defaultDispatcher;
+  private DispatcherNettyInboundHandler defaultDispatcher;
   private ConnectionManagerHandler connectionManager;
   private Channel serverChannel;
 
   public WorldServer(WorldConfig config, ThreadCommonResource threadCommonResource,
-      DispatcherHandler defaultDispatcher, ConnectionManagerHandler connectionManager) {
+      DispatcherNettyInboundHandler defaultDispatcher, ConnectionManagerHandler connectionManager) {
     this.config = config;
     this.threadCommonResource = threadCommonResource;
     this.defaultDispatcher = defaultDispatcher;

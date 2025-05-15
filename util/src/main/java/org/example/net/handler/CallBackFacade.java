@@ -5,6 +5,7 @@ import io.netty.buffer.Unpooled;
 import java.util.concurrent.CompletableFuture;
 import org.example.net.Connection;
 import org.example.net.ConnectionManager;
+import org.example.net.DefaultDispatcher;
 import org.example.net.Message;
 import org.example.net.Util;
 import org.example.serde.Serdes;
@@ -44,5 +45,10 @@ public class CallBackFacade implements Handler {
   @Override
   public void invoke(Connection c, Message m) throws Exception {
     callback(c, m);
+  }
+
+  @Override
+  public void register(DefaultDispatcher defaultDispatcher) {
+    defaultDispatcher.registeHandler(id(), this);
   }
 }

@@ -1,10 +1,14 @@
 package org.example.world.config;
 
+import java.util.List;
 import org.example.common.handler.ConnectionManagerHandler;
 import org.example.exec.VirutalExecutors;
 import org.example.net.ConnectionManager;
 import org.example.net.DefaultDispatcher;
-import org.example.net.handler.DispatcherHandler;
+import org.example.net.handler.CallBackFacade;
+import org.example.net.handler.DispatcherNettyInboundHandler;
+import org.example.net.handler.Handler;
+import org.example.serde.Serdes;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -33,8 +37,19 @@ public class WorldConfiguration {
   }
 
   @Bean
-  public DispatcherHandler dispatcherHandler(DefaultDispatcher defaultDispatcher) {
-    return new DispatcherHandler(defaultDispatcher);
+  public DefaultDispatcher defaultDispatcher(List<Handler> handlers, Serdes s,
+      ConnectionManager manager) {
+    DefaultDispatcher d = new DefaultDispatcher();
+    for (Handler h : handlers) {
+      h.register(d);
+    }
+    new CallBackFacade(manager, s).register(d);
+    return d;
+  }
+
+  @Bean
+  public DispatcherNettyInboundHandler dispatcherHandler(DefaultDispatcher defaultDispatcher) {
+    return new DispatcherNettyInboundHandler(defaultDispatcher);
   }
 
 }

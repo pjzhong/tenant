@@ -22,7 +22,7 @@ import org.example.net.ConnectionManager;
 import org.example.net.DefaultDispatcher;
 import org.example.net.codec.MessageCodec;
 import org.example.net.handler.CallBackFacade;
-import org.example.net.handler.DispatcherHandler;
+import org.example.net.handler.DispatcherNettyInboundHandler;
 import org.example.serde.DefaultSerializersRegister;
 import org.example.serde.Serdes;
 import org.example.util.NettyByteBufUtil;
@@ -48,11 +48,8 @@ public class GameFacdeTest {
     invoker = new ExampleFacadeInvoker(connectionManager, serdes);
 
     DefaultDispatcher handlerRegistry = new DefaultDispatcher();
-    ExampleFacade facade = new ExampleFacade(invoker);
-    ExampleFacadeHandler handler = new ExampleFacadeHandler(facade, serdes);
-    for (int id : ExampleFacadeHandler.protos) {
-      handlerRegistry.registeHandler(id, handler);
-    }
+    ExampleFacadeHandler handler = new ExampleFacadeHandler(new ExampleFacade(invoker), serdes);
+    handler.register(handlerRegistry);
 
     CallBackFacade gameFacadeCallBack = new CallBackFacade(connectionManager, serdes);
     handlerRegistry.registeHandler(gameFacadeCallBack.id(), gameFacadeCallBack);
@@ -61,7 +58,7 @@ public class GameFacdeTest {
     connectionManager.bindChannel(gameId("1"), embeddedChannel);
     embeddedChannel.pipeline()
         .addLast(new MessageCodec())
-        .addLast(new DispatcherHandler(handlerRegistry));
+        .addLast(new DispatcherNettyInboundHandler(handlerRegistry));
 
   }
 

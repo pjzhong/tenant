@@ -10,19 +10,19 @@ import java.util.concurrent.TimeUnit;
 import org.example.common.handler.ConnectionManagerHandler;
 import org.example.game.GameConfig;
 import org.example.net.codec.MessageCodec;
-import org.example.net.handler.DispatcherHandler;
+import org.example.net.handler.DispatcherNettyInboundHandler;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ClientInitHandler extends ChannelInitializer<Channel> {
 
   private GameConfig config;
-  private DispatcherHandler defaultDispatcher;
+  private DispatcherNettyInboundHandler defaultDispatcher;
   private ConnectionManagerHandler connectionManager;
   private LoggingHandler loggingHandler;
 
   public ClientInitHandler(GameConfig config,
-      DispatcherHandler defaultDispatcher, ConnectionManagerHandler connectionManager) {
+      DispatcherNettyInboundHandler defaultDispatcher, ConnectionManagerHandler connectionManager) {
     this.config = config;
     this.defaultDispatcher = defaultDispatcher;
     this.connectionManager = connectionManager;

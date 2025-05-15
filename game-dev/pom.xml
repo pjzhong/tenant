@@ -108,69 +108,69 @@
         </executions>
       </plugin>
 
-      <!-- 添加 exec-maven-plugin 插件 -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>codeGenerator</id>
-            <!-- 选择一个合适的 Maven 构建生命周期阶段 -->
-            <phase>compile</phase>
-            <goals>
-              <goal>java</goal>
-            </goals>
-            <configuration>
-              <mainClass>org.example.common.SourceCodeGenerator</mainClass>
-              <!-- 传递给 Java 应用程序的命令行参数 -->
-              <arguments>
-                <argument>${game.generated.directory}</argument>
-              </arguments>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+      <!--      &lt;!&ndash; 添加 exec-maven-plugin 插件 &ndash;&gt;-->
+      <!--      <plugin>-->
+      <!--        <groupId>org.codehaus.mojo</groupId>-->
+      <!--        <artifactId>exec-maven-plugin</artifactId>-->
+      <!--        <executions>-->
+      <!--          <execution>-->
+      <!--            <id>codeGenerator</id>-->
+      <!--            &lt;!&ndash; 选择一个合适的 Maven 构建生命周期阶段 &ndash;&gt;-->
+      <!--            <phase>compile</phase>-->
+      <!--            <goals>-->
+      <!--              <goal>java</goal>-->
+      <!--            </goals>-->
+      <!--            <configuration>-->
+      <!--              <mainClass>org.example.common.SourceCodeGenerator</mainClass>-->
+      <!--              &lt;!&ndash; 传递给 Java 应用程序的命令行参数 &ndash;&gt;-->
+      <!--              <arguments>-->
+      <!--                <argument>${game.generated.directory}</argument>-->
+      <!--              </arguments>-->
+      <!--            </configuration>-->
+      <!--          </execution>-->
+      <!--        </executions>-->
+      <!--      </plugin>-->
 
-      <!-- 生成的业务代码其所在的目录，需要加入到编译路径中 -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>3.0.0</version>
-        <executions>
-          <execution>
-            <phase>compile</phase>
-            <goals>
-              <goal>add-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>${game.generated.directory}
-                </source><!-- adjust folder name to your needs -->
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+      <!--      &lt;!&ndash; 生成的业务代码其所在的目录，需要加入到编译路径中 &ndash;&gt;-->
+      <!--      <plugin>-->
+      <!--        <groupId>org.codehaus.mojo</groupId>-->
+      <!--        <artifactId>build-helper-maven-plugin</artifactId>-->
+      <!--        <version>3.0.0</version>-->
+      <!--        <executions>-->
+      <!--          <execution>-->
+      <!--            <phase>compile</phase>-->
+      <!--            <goals>-->
+      <!--              <goal>add-source</goal>-->
+      <!--            </goals>-->
+      <!--            <configuration>-->
+      <!--              <sources>-->
+      <!--                <source>${game.generated.directory}-->
+      <!--                </source>&lt;!&ndash; adjust folder name to your needs &ndash;&gt;-->
+      <!--              </sources>-->
+      <!--            </configuration>-->
+      <!--          </execution>-->
+      <!--        </executions>-->
+      <!--      </plugin>-->
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>${maven.compiler.source}</source>
-          <target>${maven.compiler.target}</target>
-          <encoding>${project.build.sourceEncoding}</encoding>
-        </configuration>
+      <!--      <plugin>-->
+      <!--        <groupId>org.apache.maven.plugins</groupId>-->
+      <!--        <artifactId>maven-compiler-plugin</artifactId>-->
+      <!--        <configuration>-->
+      <!--          <source>${maven.compiler.source}</source>-->
+      <!--          <target>${maven.compiler.target}</target>-->
+      <!--          <encoding>${project.build.sourceEncoding}</encoding>-->
+      <!--        </configuration>-->
 
-        <executions>
-          <execution>
-            <id>game-generated-compile</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+      <!--        <executions>-->
+      <!--          <execution>-->
+      <!--            <id>game-generated-compile</id>-->
+      <!--            <phase>compile</phase>-->
+      <!--            <goals>-->
+      <!--              <goal>compile</goal>-->
+      <!--            </goals>-->
+      <!--          </execution>-->
+      <!--        </executions>-->
+      <!--      </plugin>-->
 
 
     </plugins>
@@ -178,10 +178,10 @@
 
   <dependencies>
     <!-- https://mvnrepository.com/artifact/io.github.classgraph/classgraph -->
-    <dependency>
-      <groupId>io.github.classgraph</groupId>
-      <artifactId>classgraph</artifactId>
-    </dependency>
+    <!--    <dependency>-->
+    <!--      <groupId>io.github.classgraph</groupId>-->
+    <!--      <artifactId>classgraph</artifactId>-->
+    <!--    </dependency>-->
 
     <dependency>
       <groupId>${project.groupId}</groupId>

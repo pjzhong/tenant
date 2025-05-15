@@ -25,15 +25,17 @@ public class DefaultDispatcher implements Dispatcher {
   private Int2ObjectOpenHashMap<Handler> handles;
 
   public synchronized Handler registeHandler(int id, Handler handler) {
-    Int2ObjectOpenHashMap<Handler> handles = new Int2ObjectOpenHashMap<>(this.handles);
-    handles.put(id, handler);
-    this.handles = handles;
-    return handler;
+    return registeHandlers(new int[]{id}, handler);
   }
 
   public synchronized Handler registeHandlers(int[] ids, Handler handler) {
     Int2ObjectOpenHashMap<Handler> handles = new Int2ObjectOpenHashMap<>(this.handles);
     for (int id : ids) {
+      Handler prev = handles.get(id);
+      if (prev != null) {
+        throw new IllegalArgumentException(
+            String.format("%s\n%s\n发生ID冲突，冲突ID:%s", handler, prev, id));
+      }
       handles.put(id, handler);
     }
 

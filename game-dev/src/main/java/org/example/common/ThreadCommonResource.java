@@ -1,6 +1,7 @@
 package org.example.common;
 
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.util.NettyRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,14 +19,15 @@ public class ThreadCommonResource implements AutoCloseable {
   private Logger logger = LoggerFactory.getLogger(this.getClass());
 
   /** BOSS线程 */
-  private final NioEventLoopGroup boss;
+  private final MultiThreadIoEventLoopGroup boss;
   /** 工作线程 */
-  private final NioEventLoopGroup worker;
+  private final MultiThreadIoEventLoopGroup worker;
 
   public ThreadCommonResource() {
-    boss = new NioEventLoopGroup(1, new NamedThreadFactory("BOSS"));
-    worker = new NioEventLoopGroup(NettyRuntime.availableProcessors() / 2,
-        new NamedThreadFactory("WORKER"));
+    boss = new MultiThreadIoEventLoopGroup(1, new NamedThreadFactory("BOSS"),
+        NioIoHandler.newFactory());
+    worker = new MultiThreadIoEventLoopGroup(NettyRuntime.availableProcessors() / 2,
+        new NamedThreadFactory("WORKER"), NioIoHandler.newFactory());
   }
 
   @Override
@@ -36,11 +38,11 @@ public class ThreadCommonResource implements AutoCloseable {
   }
 
 
-  public NioEventLoopGroup getBoss() {
+  public MultiThreadIoEventLoopGroup getBoss() {
     return boss;
   }
 
-  public NioEventLoopGroup getWorker() {
+  public MultiThreadIoEventLoopGroup getWorker() {
     return worker;
   }
 }

@@ -13,11 +13,11 @@ import org.example.net.Message;
  * @since 2022/12/22 12:34
  */
 @Sharable
-public class DispatcherHandler extends SimpleChannelInboundHandler<Message> {
+public class DispatcherNettyInboundHandler extends SimpleChannelInboundHandler<Message> {
 
   private Dispatcher dispatcher;
 
-  public DispatcherHandler(Dispatcher dispatcher) {
+  public DispatcherNettyInboundHandler(Dispatcher dispatcher) {
     this.dispatcher = dispatcher;
   }
 

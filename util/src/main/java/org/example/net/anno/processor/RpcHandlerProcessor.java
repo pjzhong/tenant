@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -43,6 +44,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
+import org.example.net.DefaultDispatcher;
 import org.example.net.Util;
 import org.example.net.anno.Req;
 
@@ -135,6 +137,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
     TypeSpec.Builder typeSpecBuilder = TypeSpec.classBuilder(simpleName)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addSuperinterface(Util.HANDLER_INTERFACE)
+        .addAnnotation(Util.COMPONENT_ANNOTATION)
         .addField(FieldSpec
             .builder(facdeTypeName, FACADE_VAR_NAME)
             .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
@@ -150,7 +153,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
 
     TypeSpecInfo info = buildTypeSpecInfo(facade, typeSpecBuilder, elements);
 
-    buildtMethod(info);
+    buildHandlerMethod(info);
 
     JavaFile javaFile = JavaFile.builder(packet, typeSpecBuilder.build())
         .build();
@@ -170,7 +173,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
     return info;
   }
 
-  void buildtMethod(TypeSpecInfo info) {
+  void buildHandlerMethod(TypeSpecInfo info) {
     MethodSpec.Builder invoker = MethodSpec.methodBuilder("invoke")
         .addAnnotation(Override.class)
         .addModifiers(Modifier.PUBLIC)
@@ -179,8 +182,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
         .addException(Exception.class);
 
     invoker.beginControlFlow("switch(m.proto())");
-    IntList intList = buildMethod0(info, invoker);
-
+    IntList ids = buildHandlerMethod0(info, invoker);
     invoker
         .addStatement(
             "default -> throw new UnsupportedOperationException(\"【$L】无法处理消息，原因:【缺少对应方法】，消息ID:【%s】\".formatted($L.proto()))",
@@ -188,15 +190,11 @@ public class RpcHandlerProcessor extends AbstractProcessor {
         .endControlFlow().addCode(";");
 
     info.builder
-        .addField(FieldSpec.builder(int[].class, PROTOS_VAR_NAME)
-            .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
-            .initializer("new int[]{$L}",
-                intList.intStream().mapToObj(String::valueOf).collect(Collectors.joining(",")))
-            .build())
+        .addMethod(buildRegisterMethod(info, ids))
         .addMethod(invoker.build());
   }
 
-  private static IntList buildMethod0(TypeSpecInfo info,
+  private static IntList buildHandlerMethod0(TypeSpecInfo info,
       MethodSpec.Builder handlerMethod) {
     IntList intList = new IntArrayList();
     for (ExecutableElement element : info.methods) {
@@ -237,7 +235,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
               methodBuilder.addStatement("double $L = $L.readDouble()", pname, BUF_VAR_NAME);
           case INT ->
               methodBuilder.addStatement("int $L = $L.readVarInt32($L)", pname, SERIALIZER_VAR_NAME,
-              BUF_VAR_NAME);
+                  BUF_VAR_NAME);
           case LONG -> methodBuilder.addStatement("long $L = $L.readVarInt64($L)", pname,
               SERIALIZER_VAR_NAME,
               BUF_VAR_NAME);
@@ -340,6 +338,22 @@ public class RpcHandlerProcessor extends AbstractProcessor {
     }
 
     return codeBlock;
+  }
+
+  private MethodSpec buildRegisterMethod(TypeSpecInfo info, IntList intList) {
+    final String dispatcherVarName = "dispatcher";
+    StringJoiner joiner = new StringJoiner(",", "{", "}");
+    for (int id : intList) {
+      joiner.add(String.valueOf(id));
+    }
+
+    MethodSpec.Builder registerMethod = MethodSpec.methodBuilder("register")
+        .addAnnotation(Override.class)
+        .addModifiers(Modifier.PUBLIC)
+        .addParameter(DefaultDispatcher.class, dispatcherVarName)
+        .addStatement("$L.registeHandlers(new int[]$L, this)", dispatcherVarName, joiner);
+
+    return registerMethod.build();
   }
 
   private static boolean hasReturnValue(ExecutableElement executableElement) {

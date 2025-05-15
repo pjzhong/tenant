@@ -10,8 +10,9 @@ package org.example.serde;
 public interface SerdeRegister {
 
   /**
-   * 使用{@param serdes}注册{@link  Serde}实现
+   * 使用{@code serdes}注册{@link Serializer}实现
    *
+   * @param serdes
    * @since 2025/5/14 11:23
    */
   void register(Serdes serdes);

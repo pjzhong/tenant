@@ -21,7 +21,9 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -45,6 +47,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 import org.example.net.DefaultDispatcher;
+import org.example.net.HandlerRegister;
 import org.example.net.Util;
 import org.example.net.anno.Req;
 
@@ -63,7 +66,6 @@ public class RpcHandlerProcessor extends AbstractProcessor {
   private static final String CONNECTION_VAR_NAME = "c";
   private static final String MESSAGE_VAR_NAME = "m";
   private static final String BUF_VAR_NAME = "b";
-  private static final String PROTOS_VAR_NAME = "protos";
   private static final String RUNNABLE_VAR_NAME = "r";
 
   private static final ParameterSpec CONNECTION_PARAM_SPEC = ParameterSpec.builder(
@@ -72,6 +74,9 @@ public class RpcHandlerProcessor extends AbstractProcessor {
   private static final ParameterSpec MESSAGE_PARAM_SPEC = ParameterSpec.builder(
       MESSAGE_CLASS_NAME,
       MESSAGE_VAR_NAME).build();
+
+
+  private final Map<Integer, String> handlers = new HashMap<>();
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -194,12 +199,22 @@ public class RpcHandlerProcessor extends AbstractProcessor {
         .addMethod(invoker.build());
   }
 
-  private static IntList buildHandlerMethod0(TypeSpecInfo info,
+  private IntList buildHandlerMethod0(TypeSpecInfo info,
       MethodSpec.Builder handlerMethod) {
     IntList intList = new IntArrayList();
     for (ExecutableElement element : info.methods) {
       final int id = Util.calcProtoId(info.typeElement, element);
       Name methodName = element.getSimpleName();
+
+      String name = String.format("%s.%s", info.typeElement, methodName);
+      String prev = handlers.put(id, name);
+      if (prev != null) {
+        processingEnv.getMessager()
+            .printError(
+                "[%s]\n[%s]\nid:%s, hashID发生碰撞，请修改名字以避免".formatted(prev, name, id),
+                element);
+        continue;
+      }
 
       MethodSpec.Builder methodBuilder = MethodSpec
           .methodBuilder(methodName.toString())
@@ -325,8 +340,8 @@ public class RpcHandlerProcessor extends AbstractProcessor {
           .beginControlFlow("try")
           .addStatement("$L.writeVarInt32($L, $L)", SERIALIZER_VAR_NAME, resBuf, MSG_ID_VAR_NAME)
           .addStatement("$L.writeObject($L, $L)", SERIALIZER_VAR_NAME, resBuf, resVarName)
-          .addStatement("$L.channel().writeAndFlush($T.of($L, $L))", CONNECTION_VAR_NAME,
-              MESSAGE_CLASS_NAME, Util.CALL_BACK_ID, resBuf)
+          .addStatement("$L.channel().writeAndFlush($T.callBack($L))", CONNECTION_VAR_NAME,
+              MESSAGE_CLASS_NAME, resBuf)
           .endControlFlow()
           .beginControlFlow("catch (Throwable t)")
           .addStatement("$T.release($L)", ReferenceCountUtil.class, resBuf)
@@ -347,6 +362,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
       joiner.add(String.valueOf(id));
     }
 
+    info.builder.addSuperinterface(HandlerRegister.class);
     MethodSpec.Builder registerMethod = MethodSpec.methodBuilder("register")
         .addAnnotation(Override.class)
         .addModifiers(Modifier.PUBLIC)

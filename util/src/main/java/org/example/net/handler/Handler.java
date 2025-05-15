@@ -1,7 +1,6 @@
 package org.example.net.handler;
 
 import org.example.net.Connection;
-import org.example.net.DefaultDispatcher;
 import org.example.net.Message;
 
 /**
@@ -18,9 +17,4 @@ public interface Handler {
    * @since 2025/5/15 11:30
    */
   void invoke(Connection connection, Message message) throws Exception;
-
-  /**
-   * @since 2025/5/15 11:01
-   */
-  void register(DefaultDispatcher defaultDispatcher);
 }

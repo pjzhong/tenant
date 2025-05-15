@@ -35,6 +35,16 @@ public class Message implements ReferenceCounted {
     return message;
   }
 
+  public static Message callBack(byte[] packet) {
+    //回调ID设置0
+    return of(0, packet);
+  }
+
+  public static Message callBack(ByteBuf packet) {
+    //回调ID设置0
+    return of(0, packet);
+  }
+
   public int proto() {
     return proto;
   }
@@ -79,8 +89,8 @@ public class Message implements ReferenceCounted {
 
   @Override
   public ReferenceCounted retain() {
-     packet.retain();
-     return this;
+    packet.retain();
+    return this;
   }
 
   @Override

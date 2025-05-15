@@ -1,18 +1,26 @@
 package org.example.net.handler;
 
+import com.google.auto.service.AutoService;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.concurrent.CompletableFuture;
 import org.example.net.Connection;
 import org.example.net.ConnectionManager;
 import org.example.net.DefaultDispatcher;
+import org.example.net.HandlerRegister;
 import org.example.net.Message;
-import org.example.net.Util;
 import org.example.serde.Serdes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CallBackFacade implements Handler {
+/**
+ * 回调处理实现
+ *
+ * @author zhongjianping
+ * @since 2025/5/15 21:49
+ */
+@AutoService(HandlerRegister.class)
+public class CallBackFacade implements Handler, HandlerRegister {
 
   static final Logger logger = LoggerFactory.getLogger(CallBackFacade.class);
 
@@ -38,8 +46,9 @@ public class CallBackFacade implements Handler {
     futureVar.complete(serializer.readObject(buf));
   }
 
-  public int id() {
-    return Util.CALL_BACK_ID;
+  public int callBackId() {
+    //回调ID设置0
+    return 0;
   }
 
   @Override
@@ -49,6 +58,6 @@ public class CallBackFacade implements Handler {
 
   @Override
   public void register(DefaultDispatcher defaultDispatcher) {
-    defaultDispatcher.registeHandler(id(), this);
+    defaultDispatcher.registeHandler(callBackId(), this);
   }
 }

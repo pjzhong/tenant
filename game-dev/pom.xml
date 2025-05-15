@@ -82,6 +82,21 @@
           <mainClass>${main.class}</mainClass>
           <outputDirectory>${outputdir}</outputDirectory>
           <layout>JAR</layout>
+          <excludes>
+            <!--编译时依赖不打包-->
+            <exclude>
+              <groupId>com.google.auto.service</groupId>
+              <artifactId>auto-service</artifactId>
+            </exclude>
+            <exclude>
+              <groupId>com.google.auto</groupId>
+              <artifactId>auto-common</artifactId>
+            </exclude>
+            <exclude>
+              <groupId>com.google.auto.service</groupId>
+              <artifactId>auto-service-annotations</artifactId>
+            </exclude>
+          </excludes>
         </configuration>
       </plugin>
 
@@ -108,71 +123,6 @@
         </executions>
       </plugin>
 
-      <!--      &lt;!&ndash; 添加 exec-maven-plugin 插件 &ndash;&gt;-->
-      <!--      <plugin>-->
-      <!--        <groupId>org.codehaus.mojo</groupId>-->
-      <!--        <artifactId>exec-maven-plugin</artifactId>-->
-      <!--        <executions>-->
-      <!--          <execution>-->
-      <!--            <id>codeGenerator</id>-->
-      <!--            &lt;!&ndash; 选择一个合适的 Maven 构建生命周期阶段 &ndash;&gt;-->
-      <!--            <phase>compile</phase>-->
-      <!--            <goals>-->
-      <!--              <goal>java</goal>-->
-      <!--            </goals>-->
-      <!--            <configuration>-->
-      <!--              <mainClass>org.example.common.SourceCodeGenerator</mainClass>-->
-      <!--              &lt;!&ndash; 传递给 Java 应用程序的命令行参数 &ndash;&gt;-->
-      <!--              <arguments>-->
-      <!--                <argument>${game.generated.directory}</argument>-->
-      <!--              </arguments>-->
-      <!--            </configuration>-->
-      <!--          </execution>-->
-      <!--        </executions>-->
-      <!--      </plugin>-->
-
-      <!--      &lt;!&ndash; 生成的业务代码其所在的目录，需要加入到编译路径中 &ndash;&gt;-->
-      <!--      <plugin>-->
-      <!--        <groupId>org.codehaus.mojo</groupId>-->
-      <!--        <artifactId>build-helper-maven-plugin</artifactId>-->
-      <!--        <version>3.0.0</version>-->
-      <!--        <executions>-->
-      <!--          <execution>-->
-      <!--            <phase>compile</phase>-->
-      <!--            <goals>-->
-      <!--              <goal>add-source</goal>-->
-      <!--            </goals>-->
-      <!--            <configuration>-->
-      <!--              <sources>-->
-      <!--                <source>${game.generated.directory}-->
-      <!--                </source>&lt;!&ndash; adjust folder name to your needs &ndash;&gt;-->
-      <!--              </sources>-->
-      <!--            </configuration>-->
-      <!--          </execution>-->
-      <!--        </executions>-->
-      <!--      </plugin>-->
-
-      <!--      <plugin>-->
-      <!--        <groupId>org.apache.maven.plugins</groupId>-->
-      <!--        <artifactId>maven-compiler-plugin</artifactId>-->
-      <!--        <configuration>-->
-      <!--          <source>${maven.compiler.source}</source>-->
-      <!--          <target>${maven.compiler.target}</target>-->
-      <!--          <encoding>${project.build.sourceEncoding}</encoding>-->
-      <!--        </configuration>-->
-
-      <!--        <executions>-->
-      <!--          <execution>-->
-      <!--            <id>game-generated-compile</id>-->
-      <!--            <phase>compile</phase>-->
-      <!--            <goals>-->
-      <!--              <goal>compile</goal>-->
-      <!--            </goals>-->
-      <!--          </execution>-->
-      <!--        </executions>-->
-      <!--      </plugin>-->
-
-
     </plugins>
   </build>
 
@@ -187,13 +137,8 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>game-util</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.google.auto.service</groupId>
-          <artifactId>auto-service</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
+
     <!-- spring -->
     <dependency>
       <groupId>org.springframework</groupId>

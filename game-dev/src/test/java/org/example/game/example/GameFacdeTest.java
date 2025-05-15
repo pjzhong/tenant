@@ -52,7 +52,7 @@ public class GameFacdeTest {
     handler.register(handlerRegistry);
 
     CallBackFacade gameFacadeCallBack = new CallBackFacade(connectionManager, serdes);
-    handlerRegistry.registeHandler(gameFacadeCallBack.id(), gameFacadeCallBack);
+    handlerRegistry.registeHandler(gameFacadeCallBack.callBackId(), gameFacadeCallBack);
 
     embeddedChannel = new EmbeddedChannel();
     connectionManager.bindChannel(gameId("1"), embeddedChannel);

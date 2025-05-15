@@ -1,6 +1,7 @@
 package org.example.serde.processor;
 
 import com.google.auto.service.AutoService;
+import com.palantir.javapoet.AnnotationSpec;
 import com.palantir.javapoet.ClassName;
 import com.palantir.javapoet.JavaFile;
 import com.palantir.javapoet.MethodSpec;
@@ -9,8 +10,6 @@ import com.palantir.javapoet.TypeName;
 import com.palantir.javapoet.TypeSpec;
 import com.palantir.javapoet.TypeSpec.Builder;
 import io.netty.buffer.ByteBuf;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,11 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.Filer;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -36,14 +32,11 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic.Kind;
-import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
-import javax.tools.StandardLocation;
 import org.apache.commons.lang3.StringUtils;
 import org.example.serde.SerdeRegister;
 import org.example.serde.Serdes;
 import org.example.serde.Serializer;
-import org.example.util.ServicesFiles;
 
 @SupportedAnnotationTypes("org.example.serde.Serde")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
@@ -63,9 +56,6 @@ public class SerdeProcessor extends AbstractProcessor {
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
     processElements(annotations, roundEnv);
-    if (roundEnv.processingOver()) {
-      generateConfigFiles();
-    }
     return false;
   }
 
@@ -142,8 +132,9 @@ public class SerdeProcessor extends AbstractProcessor {
         } catch (Throwable e) {
           processingEnv.getMessager()
               .printError(
-                  "[%s] %s build Serde error, %s".formatted(getClass(),
+                  "[%s] %s build Serde error, %s\n%s".formatted(getClass(),
                       clazz,
+                      e,
                       Arrays.stream(
                               e.getStackTrace()).map(Objects::toString)
                           .collect(Collectors.joining("\n"))), clazz);
@@ -177,7 +168,11 @@ public class SerdeProcessor extends AbstractProcessor {
     }
 
     serdeObjects.put(protoId, type.toString());
-    builder.addSuperinterface(SerdeRegister.class);
+    builder.addSuperinterface(SerdeRegister.class)
+        .addAnnotation(AnnotationSpec
+            .builder(AutoService.class)
+            .addMember("value", "$T.class", SerdeRegister.class)
+            .build());
     MethodSpec register = MethodSpec
         .methodBuilder("register")
         .addModifiers(Modifier.PUBLIC)
@@ -188,57 +183,6 @@ public class SerdeProcessor extends AbstractProcessor {
         .build();
     return builder.addMethod(register);
   }
-
-  /**
-   * {@link com.google.auto.service.processor.AutoServiceProcessor;}
-   *
-   * @since 2025/5/14 11:40
-   */
-  private void generateConfigFiles() {
-    Filer filer = processingEnv.getFiler();
-
-    String resourceFile = "META-INF/services/" + SerdeRegister.class.getName();
-    processingEnv.getMessager().printNote("Working on resource file: " + resourceFile);
-    try {
-      SortedSet<String> allServices = new TreeSet<>();
-      try {
-        // would like to be able to print the full path
-        // before we attempt to get the resource in case the behavior
-        // of filer.getResource does change to match the spec, but there's
-        // no good way to resolve CLASS_OUTPUT without first getting a resource.
-        FileObject existingFile =
-            filer.getResource(StandardLocation.CLASS_OUTPUT, "", resourceFile);
-        Set<String> oldServices = ServicesFiles.readServiceFile(existingFile.openInputStream());
-        allServices.addAll(oldServices);
-      } catch (IOException e) {
-        // According to the javadoc, Filer.getResource throws an exception
-        // if the file doesn't already exist.  In practice this doesn't
-        // appear to be the case.  Filer.getResource will happily return a
-        // FileObject that refers to a non-existent file but will throw
-        // IOException if you try to open an input stream for it.
-        processingEnv.getMessager().printNote("Resource file did not already exist.");
-      }
-      Set<String> serdeImpl = serdeObjects.values()
-          .stream()
-          .map(s -> s + SERDE_SUB_FIX)
-          .collect(Collectors.toSet());
-      if (!allServices.addAll(serdeImpl)) {
-        processingEnv.getMessager().printNote("No new service entries being added.");
-        return;
-      }
-
-      processingEnv.getMessager().printNote("New service file contents: " + allServices);
-      FileObject fileObject =
-          filer.createResource(StandardLocation.CLASS_OUTPUT, "", resourceFile);
-      try (OutputStream out = fileObject.openOutputStream()) {
-        ServicesFiles.writeServiceFile(allServices, out);
-      }
-      processingEnv.getMessager().printNote("Wrote to: " + fileObject.toUri());
-    } catch (IOException e) {
-      processingEnv.getMessager().printError("Unable to create " + resourceFile + ", " + e);
-    }
-  }
-
 
   /**
    * class代码生成

@@ -1,13 +1,16 @@
 package org.example.game.config;
 
 import java.util.List;
+import java.util.ServiceLoader;
 import org.example.common.handler.ConnectionManagerHandler;
 import org.example.exec.VirutalExecutors;
 import org.example.net.ConnectionManager;
 import org.example.net.DefaultDispatcher;
+import org.example.net.HandlerRegister;
 import org.example.net.handler.CallBackFacade;
 import org.example.net.handler.DispatcherNettyInboundHandler;
-import org.example.net.handler.Handler;
+import org.example.serde.DefaultSerializersRegister;
+import org.example.serde.SerdeRegister;
 import org.example.serde.Serdes;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +23,16 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class GameConfiguration {
+
+  @Bean
+  public Serdes commonSerializer() {
+    Serdes serializer = new Serdes();
+    new DefaultSerializersRegister().register(serializer);
+    for (SerdeRegister register : ServiceLoader.load(SerdeRegister.class)) {
+      register.register(serializer);
+    }
+    return serializer;
+  }
 
   @Bean
   public ConnectionManager connectionManager() {
@@ -38,10 +51,10 @@ public class GameConfiguration {
 
 
   @Bean
-  public DefaultDispatcher defaultDispatcher(List<Handler> handlers, Serdes s,
+  public DefaultDispatcher defaultDispatcher(List<HandlerRegister> handlers, Serdes s,
       ConnectionManager manager) {
     DefaultDispatcher d = new DefaultDispatcher();
-    for (Handler h : handlers) {
+    for (HandlerRegister h : handlers) {
       h.register(d);
     }
     new CallBackFacade(manager, s).register(d);

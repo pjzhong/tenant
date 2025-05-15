@@ -20,11 +20,7 @@ import org.example.net.handler.ExecSupplier;
 import org.example.net.handler.RawExecSupplier;
 import org.example.serde.Serdes;
 import org.example.util.NettyByteBufUtil;
-
 public final class Util {
-
-  /** 回调请求ID */
-  public static final int CALL_BACK_ID = 1;
 
   /** 常用类型 */
 

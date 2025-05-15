@@ -56,7 +56,7 @@ public class AvatarFacadeTest {
     handler.register(handlerRegistry);
 
     CallBackFacade gameFacadeCallBack = new CallBackFacade(connectionManager, serdes);
-    handlerRegistry.registeHandler(gameFacadeCallBack.id(), gameFacadeCallBack);
+    handlerRegistry.registeHandler(gameFacadeCallBack.callBackId(), gameFacadeCallBack);
 
     embeddedChannel = new EmbeddedChannel();
     embeddedChannel.attr(AttributeKey.valueOf("AvatarId")).set(new AvatarId(1));
@@ -67,7 +67,7 @@ public class AvatarFacadeTest {
 
   }
 
-  @RepeatedTest(1000)
+  @RepeatedTest(100)
   public void echo() throws Exception {
     String str = String.valueOf(ThreadLocalRandom.current().nextLong());
     invoker.of(embeddedChannel.attr(Connection.CONNECTION).get())

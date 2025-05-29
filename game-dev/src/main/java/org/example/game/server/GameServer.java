@@ -15,7 +15,6 @@ import org.example.common.ThreadCommonResource;
 import org.example.common.event.ServerStartEvent;
 import org.example.common.handler.ConnectionManagerHandler;
 import org.example.common.util.NettyEventLoopUtil;
-import org.example.game.GameConfig;
 import org.example.net.codec.MessageCodec;
 import org.example.net.handler.DispatcherNettyInboundHandler;
 import org.slf4j.Logger;
@@ -30,14 +29,14 @@ public class GameServer implements AutoCloseable {
 
   private static Logger logger = LoggerFactory.getLogger(GameServer.class);
 
-  private GameConfig config;
+  private GameInfo config;
   private ThreadCommonResource threadCommonResource;
   private DispatcherNettyInboundHandler defaultDispatcher;
   private ConnectionManagerHandler connectionManager;
   private Channel serverChannel;
   private ApplicationContext context;
 
-  public GameServer(ApplicationContext context, GameConfig config,
+  public GameServer(ApplicationContext context, GameInfo config,
       ThreadCommonResource threadCommonResource,
       DispatcherNettyInboundHandler defaultDispatcher, ConnectionManagerHandler connectionManager) {
     this.context = context;
@@ -54,6 +53,14 @@ public class GameServer implements AutoCloseable {
 
 
   public boolean start() throws Exception {
+    boolean suc = bind();
+    if (suc) {
+      context.publishEvent(new ServerStartEvent());
+    }
+    return suc;
+  }
+
+  public boolean bind() throws InterruptedException {
     ServerBootstrap b = new ServerBootstrap();
     b
         .option(ChannelOption.SO_BACKLOG, 1024)
@@ -82,8 +89,6 @@ public class GameServer implements AutoCloseable {
       prot = address.getPort();
     }
     logger.info("服务器：【{}】，启动成功：绑定端口： {}!", config.getId(), prot);
-
-    context.publishEvent(new ServerStartEvent());
     return channelFuture.isSuccess();
   }
 

@@ -1,8 +1,6 @@
-package org.example.world;
+package org.example.world.server;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 
 /**
@@ -12,9 +10,7 @@ import org.springframework.stereotype.Component;
  * @since 2021年06月30日 18:09:27
  **/
 @Component
-@ComponentScan({"org.example.world", "org.example.common"})
-@PropertySource("classpath:world.properties")
-public class WorldConfig {
+public class WorldInfo {
 
   @Value("${world.id}")
   private String id;

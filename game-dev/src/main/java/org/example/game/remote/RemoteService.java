@@ -13,7 +13,7 @@ import org.example.common.model.ServerInfo;
 import org.example.common.net.generated.invoker.RegisterFacadeInvoker;
 import org.example.common.util.NettyEventLoopUtil;
 import org.example.exec.VirutalExecutors;
-import org.example.game.GameConfig;
+import org.example.game.server.GameInfo;
 import org.example.model.AnonymousId;
 import org.example.net.Connection;
 import org.example.net.ConnectionManager;
@@ -26,14 +26,14 @@ public class RemoteService {
 
   private static final Logger logger = LoggerFactory.getLogger(RemoteService.class);
 
-  private GameConfig config;
+  private GameInfo config;
 
   private ThreadCommonResource threadCommonResource;
   private ClientInitHandler channelInitializer;
   private ConnectionManager connectionManager;
   private RegisterFacadeInvoker registerFacadeInvoker;
 
-  public RemoteService(GameConfig config, ThreadCommonResource threadCommonResource,
+  public RemoteService(GameInfo config, ThreadCommonResource threadCommonResource,
       ClientInitHandler channelInitializer, ConnectionManager connectionManager,
       RegisterFacadeInvoker registerFacadeInvoker) {
     this.config = config;

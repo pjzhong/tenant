@@ -13,7 +13,9 @@ import org.example.serde.DefaultSerializersRegister;
 import org.example.serde.SerdeRegister;
 import org.example.serde.Serdes;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 
 /**
  * 服务器环境配置
@@ -22,6 +24,8 @@ import org.springframework.context.annotation.Configuration;
  * @since 2024/12/5 18:08
  */
 @Configuration
+@ComponentScan({"org.example.game", "org.example.common"})
+@PropertySource("classpath:game.properties")
 public class GameConfiguration {
 
   @Bean

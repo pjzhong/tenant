@@ -1,23 +1,19 @@
-package org.example.game;
+package org.example.game.server;
 
 
 import org.example.common.model.GameId;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.stereotype.Component;
 
 
 /**
- * 子容器配置类
+ * 游戏服配置信息
  *
  * @author ZJP
  * @since 2021年06月30日 18:09:27
  **/
-@ComponentScan({"org.example.game", "org.example.common"})
-@PropertySource("classpath:game.properties")
-@Configuration
-public class GameConfig {
+@Component
+public class GameInfo {
 
   @Value("${game.id}")
   private GameId id;

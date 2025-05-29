@@ -16,7 +16,6 @@ import org.example.common.handler.ConnectionManagerHandler;
 import org.example.common.util.NettyEventLoopUtil;
 import org.example.net.codec.MessageCodec;
 import org.example.net.handler.DispatcherNettyInboundHandler;
-import org.example.world.WorldConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.ContextStartedEvent;
@@ -28,13 +27,13 @@ public class WorldServer implements AutoCloseable {
 
   private static Logger logger = LoggerFactory.getLogger(WorldServer.class);
 
-  private WorldConfig config;
+  private WorldInfo config;
   private ThreadCommonResource threadCommonResource;
   private DispatcherNettyInboundHandler defaultDispatcher;
   private ConnectionManagerHandler connectionManager;
   private Channel serverChannel;
 
-  public WorldServer(WorldConfig config, ThreadCommonResource threadCommonResource,
+  public WorldServer(WorldInfo config, ThreadCommonResource threadCommonResource,
       DispatcherNettyInboundHandler defaultDispatcher, ConnectionManagerHandler connectionManager) {
     this.config = config;
     this.threadCommonResource = threadCommonResource;

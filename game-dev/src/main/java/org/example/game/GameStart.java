@@ -2,6 +2,7 @@ package org.example.game;
 
 
 import org.example.exec.VirutalExecutors;
+import org.example.game.config.GameConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -16,7 +17,7 @@ public final class GameStart {
 
       Thread thread = VirutalExecutors.commonPool()
           .execute(() -> {
-            child.register(GameConfig.class);
+            child.register(GameConfiguration.class);
             child.refresh();
             child.start();
           });

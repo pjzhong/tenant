@@ -52,7 +52,7 @@ public class VirutalExecutors {
    * @param id 指定执行器所属ID
    * @since 2024/12/8 18:31
    */
-  public void executeWith(Identity id, Runnable command) {
+  public void executeOn(Identity id, Runnable command) {
     temporalExecutor.get(id).exec(command);
   }
 
@@ -73,10 +73,10 @@ public class VirutalExecutors {
    * @param identity 执行器ID
    * @since 2024/12/8 18:31
    */
-  public ScheduledFuture<?> scheduleWith(Identity identity, Runnable command, Duration duration) {
+  public ScheduledFuture<?> scheduleOn(Identity identity, Runnable command, Duration duration) {
     Identity id = Objects.requireNonNull(identity, "identity不能为空");
     return scheduledExecutorService.schedule(() -> {
-      executeWith(id, command);
+      executeOn(id, command);
     }, duration.toNanos(), TimeUnit.NANOSECONDS);
   }
 

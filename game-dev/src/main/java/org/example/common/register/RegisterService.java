@@ -1,4 +1,4 @@
-package org.example.world.register;
+package org.example.common.register;
 
 import java.util.Objects;
 import org.example.model.AnonymousId;

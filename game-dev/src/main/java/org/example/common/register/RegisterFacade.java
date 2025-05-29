@@ -1,4 +1,4 @@
-package org.example.world.register;
+package org.example.common.register;
 
 import org.example.net.Connection;
 import org.example.net.anno.Req;

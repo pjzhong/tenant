@@ -8,7 +8,7 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import java.util.concurrent.TimeUnit;
 import org.example.common.handler.ConnectionManagerHandler;
-import org.example.game.GameConfig;
+import org.example.game.server.GameInfo;
 import org.example.net.codec.MessageCodec;
 import org.example.net.handler.DispatcherNettyInboundHandler;
 import org.springframework.stereotype.Component;
@@ -16,12 +16,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class ClientInitHandler extends ChannelInitializer<Channel> {
 
-  private GameConfig config;
+  private GameInfo config;
   private DispatcherNettyInboundHandler defaultDispatcher;
   private ConnectionManagerHandler connectionManager;
   private LoggingHandler loggingHandler;
 
-  public ClientInitHandler(GameConfig config,
+  public ClientInitHandler(GameInfo config,
       DispatcherNettyInboundHandler defaultDispatcher, ConnectionManagerHandler connectionManager) {
     this.config = config;
     this.defaultDispatcher = defaultDispatcher;

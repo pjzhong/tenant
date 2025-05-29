@@ -2,6 +2,7 @@ package org.example.world;
 
 
 import org.example.exec.VirutalExecutors;
+import org.example.world.config.WorldConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -16,7 +17,7 @@ public final class WorldStart {
 
       Thread thread = VirutalExecutors.commonPool()
           .execute(() -> {
-            child.register(WorldConfig.class);
+            child.register(WorldConfiguration.class);
             child.refresh();
             child.start();
           });

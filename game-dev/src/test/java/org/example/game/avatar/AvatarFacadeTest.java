@@ -1,7 +1,5 @@
 package org.example.game.avatar;
 
-import static org.example.game.avatar.IntId.intId;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -28,6 +26,7 @@ import org.example.net.handler.CallBackFacade;
 import org.example.net.handler.DispatcherNettyInboundHandler;
 import org.example.serde.DefaultSerializersRegister;
 import org.example.serde.Serdes;
+import org.example.util.Identity;
 import org.example.util.NettyByteBufUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,6 +38,10 @@ public class AvatarFacadeTest {
   private static ConnectionManager connectionManager;
   private static Serdes serdes;
   private static AvatarFacadeInvoker invoker;
+
+  public record IntId(int id) implements Identity {
+
+  }
 
   @BeforeAll
   public static void beforeAll() {
@@ -60,7 +63,7 @@ public class AvatarFacadeTest {
 
     embeddedChannel = new EmbeddedChannel();
     embeddedChannel.attr(AttributeKey.valueOf("AvatarId")).set(new AvatarId(1));
-    connectionManager.bindChannel(intId(1), embeddedChannel);
+    connectionManager.bindChannel(new IntId(1), embeddedChannel);
     embeddedChannel.pipeline()
         .addLast(new MessageCodec())
         .addLast(new DispatcherNettyInboundHandler(handlerRegistry));

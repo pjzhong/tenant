@@ -7,7 +7,6 @@ import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
 import org.example.common.net.generated.invoker.ExampleFacadeInvoker;
 import org.example.exec.VirutalExecutors;
-import org.example.net.Connection;
 import org.example.net.anno.Req;
 import org.example.net.anno.Rpc;
 import org.example.net.handler.ExecSupplier;
@@ -28,22 +27,6 @@ public class ExampleFacade implements ExecSupplier {
   public ExampleFacade(ExampleFacadeInvoker facadeInvoker) {
     this.facadeInvoker = facadeInvoker;
   }
-
-  /**
-   * 回声
-   *
-   * @author ZJP
-   * @since 2021年09月27日 16:01:08
-   **/
-  @Req
-  public void echo(Connection connection, String str) {
-    facadeInvoker.of(connection).echo(str);
-  }
-
-  @Req
-  public void nothing() {
-  }
-
 
   @Req
   public int callback(boolean boolean1, byte[] byte1, short short1,

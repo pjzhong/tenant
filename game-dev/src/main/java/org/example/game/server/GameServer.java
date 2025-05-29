@@ -6,8 +6,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
@@ -51,16 +50,23 @@ public class GameServer implements AutoCloseable {
     start();
   }
 
-
-  public boolean start() throws Exception {
-    boolean suc = bind();
-    if (suc) {
-      context.publishEvent(new ServerStartEvent());
-    }
-    return suc;
+  public boolean isStart() {
+    return serverChannel != null && serverChannel.isActive();
   }
 
-  public boolean bind() throws InterruptedException {
+  public ChannelFuture start() throws Exception {
+    ChannelFuture f = bind();
+    if (f.isSuccess()) {
+      context.publishEvent(new ServerStartEvent());
+    }
+    return f;
+  }
+
+  public ChannelFuture startTest() throws InterruptedException {
+    return bind();
+  }
+
+  private ChannelFuture bind() throws InterruptedException {
     ServerBootstrap b = new ServerBootstrap();
     b
         .option(ChannelOption.SO_BACKLOG, 1024)
@@ -68,11 +74,11 @@ public class GameServer implements AutoCloseable {
         .childOption(ChannelOption.TCP_NODELAY, true)
         .group(threadCommonResource.getBoss(), threadCommonResource.getWorker())
         .channel(NettyEventLoopUtil.getServerSocketChannelClass())
-        .handler(new LoggingHandler(LogLevel.INFO))
         .childHandler(new ChannelInitializer<>() {
           @Override
           protected void initChannel(Channel ch) {
             ChannelPipeline pipeline = ch.pipeline();
+            pipeline.addLast("flush", new FlushConsolidationHandler());
             pipeline.addLast("idleStateHandler",
                 new IdleStateHandler(0, 0, config.getIdleSec(), TimeUnit.SECONDS));
             pipeline.addLast("manager", connectionManager);
@@ -89,7 +95,7 @@ public class GameServer implements AutoCloseable {
       prot = address.getPort();
     }
     logger.info("服务器：【{}】，启动成功：绑定端口： {}!", config.getId(), prot);
-    return channelFuture.isSuccess();
+    return channelFuture;
   }
 
 

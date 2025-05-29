@@ -14,7 +14,7 @@ public class RemoteFacade {
   }
 
   @EventListener
-  public void serverStart(ServerStartEvent event) {
+  public void serverStart(ServerStartEvent event) throws Exception {
     remoteService.serverStart();
   }
 

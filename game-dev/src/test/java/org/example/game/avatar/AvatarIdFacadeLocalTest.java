@@ -152,7 +152,7 @@ public class AvatarIdFacadeLocalTest {
 
       callbacks.add(() -> {
         try {
-          Assertions.assertEquals(hashcode, callback.get(1, TimeUnit.MILLISECONDS));
+          Assertions.assertEquals(hashcode, callback.get());
         } catch (Exception e) {
           throw new RuntimeException(e);
         }

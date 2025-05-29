@@ -1,6 +1,5 @@
 package org.example.common.supplier;
 
-import io.netty.util.AttributeKey;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import org.example.common.model.AvatarId;
@@ -18,9 +17,8 @@ public interface AvatarConnectionExecutor extends ArgExecSupplier<Connection> {
 
   @Override
   default Executor get(Connection c) {
-    AttributeKey<AvatarId> key = AttributeKey.valueOf("AvatarId");
     AvatarId avatarIdentity = Objects
-        .requireNonNull(c.channel().attr(key).get(), "玩家ID为空，请检查");
+        .requireNonNull(c.channel().attr(AvatarIdAttr.KEY).get(), "玩家ID为空，请检查");
     return VirutalExecutors.commonPool().getExecutor(avatarIdentity);
   }
 

@@ -6,8 +6,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
@@ -55,7 +53,6 @@ public class WorldServer implements AutoCloseable {
         .childOption(ChannelOption.TCP_NODELAY, true)
         .group(threadCommonResource.getBoss(), threadCommonResource.getWorker())
         .channel(NettyEventLoopUtil.getServerSocketChannelClass())
-        .handler(new LoggingHandler(LogLevel.INFO))
         .childHandler(new ChannelInitializer<>() {
           @Override
           protected void initChannel(Channel ch) {

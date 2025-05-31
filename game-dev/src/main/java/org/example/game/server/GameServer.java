@@ -94,7 +94,7 @@ public class GameServer implements AutoCloseable {
       InetSocketAddress address = (InetSocketAddress) channelFuture.channel().localAddress();
       prot = address.getPort();
     }
-    logger.info("服务器：【{}】，启动成功：绑定端口： {}!", config.getId(), prot);
+    logger.info("服务器：{}，启动成功：绑定端口： {}!", config.getId(), prot);
     return channelFuture;
   }
 
@@ -103,7 +103,7 @@ public class GameServer implements AutoCloseable {
   public void close() throws Exception {
     if (serverChannel != null) {
       serverChannel.close();
-      logger.info("服务器：【{}】，关闭链接！！", config.getId());
+      logger.info("服务器：{}，关闭链接！！", config.getId());
     }
   }
 }

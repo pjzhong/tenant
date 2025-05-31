@@ -1,5 +1,6 @@
 package org.example.world.server;
 
+import org.example.common.model.WorldId;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -13,13 +14,13 @@ import org.springframework.stereotype.Component;
 public class WorldInfo {
 
   @Value("${world.id}")
-  private String id;
+  private WorldId id;
   @Value("${world.port}")
   private int port;
   @Value("${world.idelSec:60}")
   public int idleSec = 60;
 
-  public String getId() {
+  public WorldId getId() {
     return id;
   }
 

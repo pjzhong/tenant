@@ -16,8 +16,10 @@ import org.example.util.NettyByteBufUtil;
  **/
 public final class Serdes {
 
+  public static final int NULL_ID = 0;
+
   /**
-   * [类型ID, 具体类型]
+   * 序列化注册 [类型ID -> 序列化实现]
    */
   private Int2ObjectOpenHashMap<SerializerPair> id2Serders;
   /**
@@ -134,6 +136,14 @@ public final class Serdes {
     return typePair != null ? typePair.serializer : null;
   }
 
+  public boolean isNullId(int id) {
+    return id == NULL_ID;
+  }
+
+  public void writeNull(ByteBuf buf) {
+    writeVarInt32(buf, NULL_ID);
+  }
+
   /**
    * {@link NettyByteBufUtil#writeVarInt32(ByteBuf, int)}
    *
@@ -179,6 +189,10 @@ public final class Serdes {
     int readerIndex = buf.readerIndex();
     try {
       int typeId = readVarInt32(buf);
+      if (typeId == NULL_ID) {
+        return null;
+      }
+
       Serializer<?> clazz = getSeriailizer(typeId);
       if (clazz == null) {
         throw new NullPointerException("类型ID:" + typeId + "，未注册");

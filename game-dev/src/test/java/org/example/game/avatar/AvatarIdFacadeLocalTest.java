@@ -74,7 +74,7 @@ public class AvatarIdFacadeLocalTest {
         .callback(avatarId, boolean1, byte1, short1, char1, int1, long1, float1, double1, reqMove,
             resMove);
 
-    Assertions.assertEquals(hashcode, callback.get(1, TimeUnit.MILLISECONDS));
+    Assertions.assertEquals(hashcode, callback.get());
   }
 
   @RepeatedTest(100)
@@ -111,7 +111,7 @@ public class AvatarIdFacadeLocalTest {
         .callback(avatarId, boolean1, byte1, short1, char1, int1, long1, float1, double1, reqMove,
             resMove);
 
-    Assertions.assertEquals(hashcode, callback.get(1, TimeUnit.MILLISECONDS));
+    Assertions.assertEquals(hashcode, callback.get());
   }
 
   @Test

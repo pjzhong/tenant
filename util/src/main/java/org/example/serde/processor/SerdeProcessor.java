@@ -3,6 +3,7 @@ package org.example.serde.processor;
 import com.google.auto.service.AutoService;
 import com.palantir.javapoet.AnnotationSpec;
 import com.palantir.javapoet.ClassName;
+import com.palantir.javapoet.CodeBlock;
 import com.palantir.javapoet.JavaFile;
 import com.palantir.javapoet.MethodSpec;
 import com.palantir.javapoet.ParameterizedTypeName;
@@ -34,6 +35,7 @@ import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 import org.apache.commons.lang3.StringUtils;
+import org.example.serde.Serde;
 import org.example.serde.SerdeRegister;
 import org.example.serde.Serdes;
 import org.example.serde.Serializer;
@@ -43,6 +45,10 @@ import org.example.serde.Serializer;
 @AutoService(Processor.class)
 public class SerdeProcessor extends AbstractProcessor {
 
+  private static final String DESERIALZIER_IMPL = "deserialzierImpl";
+  private static final String FAST_DESERIALZIER_IMPL = "fastDeserialzier";
+  private static final String SERIALIZER_IMPL = "serializerImpl";
+  private static final String FAST_SERIALIZER_IMPL = "fastSerializer";
   private static final String SERDE_SUB_FIX = "Serde";
   private static final String BUF_VAR_NAME = "buf";
   private static final String SERIALIZER_VAR_NAME = "serializer";
@@ -90,12 +96,9 @@ public class SerdeProcessor extends AbstractProcessor {
             case CLASS -> {
               List<Element> fieldElements = BeanSerde.getAllFieldElements(this,
                   clazz);
-              MethodSpec deSer = BeanSerde.deSerializerCode(typename, fieldElements);
-              MethodSpec serde = BeanSerde.serializerCode(typename, fieldElements);
-              constructor(builder)
-                  .addMethod(deSer)
-                  .addMethod(serde)
-              ;
+              BeanSerde.deSerializerCode(this, builder, typename, fieldElements);
+              BeanSerde.serializerCode(this, builder, typename, fieldElements);
+              constructor(builder);
 
               reigsterMethod(clz, typename, builder);
 
@@ -107,13 +110,9 @@ public class SerdeProcessor extends AbstractProcessor {
             }
             case RECORD -> {
               List<Element> fieldElements = RecordSerde.getAllFieldElements(clazz);
-              MethodSpec deSer = RecordSerde.deSerializerCode(typename, fieldElements);
-              MethodSpec serde = RecordSerde.serializerCode(typename, fieldElements);
-              constructor(builder)
-                  .addMethod(deSer)
-                  .addMethod(serde)
-              ;
-
+              RecordSerde.deSerializerCode(this, builder, typename, fieldElements);
+              RecordSerde.serializerCode(this, builder, typename, fieldElements);
+              constructor(builder);
               reigsterMethod(clz, typename, builder);
 
               JavaFileObject builderFile = processingEnv.getFiler()
@@ -185,6 +184,104 @@ public class SerdeProcessor extends AbstractProcessor {
   }
 
   /**
+   * 快速反序列化入口
+   *
+   * @since 2025/6/1 21:37
+   */
+  private static void buildFastDeSerialzier(Builder typeBuilder, TypeName typeName) {
+    String typeIdVarName = "typeId";
+    MethodSpec.Builder fastReadObject = MethodSpec.methodBuilder(FAST_DESERIALZIER_IMPL)
+        .addModifiers(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
+        .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
+        .addParameter(ByteBuf.class, BUF_VAR_NAME)
+        .addStatement("int $L = $L.readVarInt32($L)", typeIdVarName, SERIALIZER_VAR_NAME,
+            BUF_VAR_NAME)
+        .beginControlFlow("if ($L.isNullId($L))", SERIALIZER_VAR_NAME, typeIdVarName)
+        .addStatement("return null")
+        .endControlFlow()
+        .addStatement("return $L($L, $L)", DESERIALZIER_IMPL, SERIALIZER_VAR_NAME, BUF_VAR_NAME)
+        .returns(typeName);
+
+    typeBuilder.addMethod(fastReadObject.build());
+  }
+
+  /**
+   * 快速序列化入口
+   *
+   * @since 2025/6/1 21:37
+   */
+  private static void buildFastSerializerCode(Builder typeBuilder, TypeName typeName) {
+    MethodSpec.Builder fastReadObject = MethodSpec.methodBuilder(FAST_SERIALIZER_IMPL)
+        .addModifiers(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
+        .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
+        .addParameter(ByteBuf.class, BUF_VAR_NAME)
+        .addParameter(typeName, OBJECT_VAR_NAME)
+        .beginControlFlow("if ($L == null)", OBJECT_VAR_NAME)
+        .addStatement("$L.writeNull($L)", SERIALIZER_VAR_NAME, BUF_VAR_NAME)
+        .addStatement("return")
+        .endControlFlow()
+        .addStatement("$L.writeVarInt32($L, $L)", SERIALIZER_VAR_NAME, BUF_VAR_NAME,
+            typeName.toString().hashCode())
+        .addStatement("$L($L, $L, $L)", SERIALIZER_IMPL, SERIALIZER_VAR_NAME, BUF_VAR_NAME,
+            OBJECT_VAR_NAME)
+        .returns(TypeName.VOID);
+
+    typeBuilder.addMethod(fastReadObject.build());
+  }
+
+  private static CodeBlock tryFastDeSerialzier(SerdeProcessor processor, Element element) {
+    Element fullElement = processor.processingEnv.getTypeUtils().asElement(element.asType());
+
+    CodeBlock.Builder builder = CodeBlock.builder();
+    if (fullElement.getAnnotation(Serde.class) != null) {
+      TypeElement clazz = (TypeElement) fullElement;
+      ClassName typeName = ClassName.get(clazz);
+      ClassName serderTypeName = ClassName.get(typeName.packageName(),
+          typeName.simpleName() + SERDE_SUB_FIX);
+      builder.add("$T.$L($L, $L)",
+          serderTypeName,
+          FAST_DESERIALZIER_IMPL,
+          SERIALIZER_VAR_NAME,
+          BUF_VAR_NAME
+      );
+    } else {
+      builder.add("$L.readObject($L)",
+          SERIALIZER_VAR_NAME,
+          BUF_VAR_NAME
+      );
+    }
+    return builder.build();
+  }
+
+  private static CodeBlock tryFastSerialzier(SerdeProcessor processor, Element element,
+      CodeBlock getter) {
+    Element fullElement = processor.processingEnv.getTypeUtils().asElement(element.asType());
+
+    CodeBlock.Builder builder = CodeBlock.builder();
+    if (fullElement.getAnnotation(Serde.class) != null) {
+      TypeElement clazz = (TypeElement) fullElement;
+      ClassName typeName = ClassName.get(clazz);
+      ClassName serderTypeName = ClassName.get(typeName.packageName(),
+          typeName.simpleName() + SERDE_SUB_FIX);
+      builder.add("$T.$L($L, $L, $L)",
+          serderTypeName,
+          FAST_SERIALIZER_IMPL,
+          SERIALIZER_VAR_NAME,
+          BUF_VAR_NAME,
+          getter
+      );
+    } else {
+      builder.add("$L.writeObject($L, $L)",
+          SERIALIZER_VAR_NAME,
+          BUF_VAR_NAME,
+          getter
+      );
+    }
+    return builder.build();
+  }
+
+
+  /**
    * class代码生成
    *
    * @author zhongjianping
@@ -198,50 +295,74 @@ public class SerdeProcessor extends AbstractProcessor {
           .collect(Collectors.toUnmodifiableList());
     }
 
-    public static MethodSpec deSerializerCode(TypeName typeName, List<Element> fieldElements) {
-      MethodSpec.Builder builder = MethodSpec.methodBuilder("readObject")
-          .addAnnotation(Override.class)
-          .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+    public static void deSerializerCode(SerdeProcessor processor, TypeSpec.Builder typeBuilder,
+        TypeName typeName,
+        List<Element> fieldElements) {
+      buildDeSerializerCode(processor, typeBuilder, typeName, fieldElements);
+      buildFastDeSerialzier(typeBuilder, typeName);
+    }
+
+    private static void buildDeSerializerCode(SerdeProcessor processor, Builder typeBuilder,
+        TypeName typeName,
+        List<Element> fieldElements) {
+      MethodSpec.Builder impl = MethodSpec.methodBuilder(DESERIALZIER_IMPL)
+          .addModifiers(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
           .returns(typeName)
           .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
           .addParameter(ByteBuf.class, BUF_VAR_NAME);
 
-      builder.addCode("return new $T(\n", typeName);
+      impl.addCode("return new $T(\n", typeName);
       Iterator<Element> elementIterator = fieldElements.iterator();
       while (elementIterator.hasNext()) {
         Element e = elementIterator.next();
         switch (e.asType().getKind()) {
-          case BOOLEAN -> builder.addCode("$L.readBoolean()", BUF_VAR_NAME);
-          case BYTE -> builder.addCode("$L.readByte()", BUF_VAR_NAME);
-          case SHORT -> builder.addCode("$L.readShort()", BUF_VAR_NAME);
-          case CHAR -> builder.addCode("$L.readChar()", BUF_VAR_NAME);
-          case FLOAT -> builder.addCode("$L.readFloat()", BUF_VAR_NAME);
-          case DOUBLE -> builder.addCode("$T $L = $L.readDouble()", BUF_VAR_NAME);
-          case INT -> builder.addCode("$L.readVarInt32($L)",
+          case BOOLEAN -> impl.addCode("$L.readBoolean()", BUF_VAR_NAME);
+          case BYTE -> impl.addCode("$L.readByte()", BUF_VAR_NAME);
+          case SHORT -> impl.addCode("$L.readShort()", BUF_VAR_NAME);
+          case CHAR -> impl.addCode("$L.readChar()", BUF_VAR_NAME);
+          case FLOAT -> impl.addCode("$L.readFloat()", BUF_VAR_NAME);
+          case DOUBLE -> impl.addCode("$T $L = $L.readDouble()", BUF_VAR_NAME);
+          case INT -> impl.addCode("$L.readVarInt32($L)",
               SERIALIZER_VAR_NAME,
               BUF_VAR_NAME);
-          case LONG -> builder.addCode("$L.readVarInt64($L)",
+          case LONG -> impl.addCode("$L.readVarInt64($L)",
               SERIALIZER_VAR_NAME,
               BUF_VAR_NAME);
-          default -> builder.addCode("$L.readObject($L)",
-              SERIALIZER_VAR_NAME,
-              BUF_VAR_NAME
-          );
+          default -> impl.addCode("$L", tryFastDeSerialzier(processor, e));
         }
 
         if (elementIterator.hasNext()) {
-          builder.addCode(",");
+          impl.addCode(",");
         }
-        builder.addCode("\n");
+        impl.addCode("\n");
       }
-      builder.addCode(");");
-      return builder.build();
-    }
+      impl.addCode(");");
 
-    public static MethodSpec serializerCode(TypeName typeName, List<Element> fieldElements) {
-      MethodSpec.Builder builder = MethodSpec.methodBuilder("writeObject")
+      MethodSpec.Builder readObject = MethodSpec.methodBuilder("readObject")
           .addAnnotation(Override.class)
           .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+          .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
+          .addParameter(ByteBuf.class, BUF_VAR_NAME)
+          .addStatement("return $L($L, $L)", DESERIALZIER_IMPL, SERIALIZER_VAR_NAME, BUF_VAR_NAME)
+          .returns(typeName);
+
+      typeBuilder
+          .addMethod(impl.build())
+          .addMethod(readObject.build());
+    }
+
+    public static void serializerCode(SerdeProcessor processor, TypeSpec.Builder typeBuilder,
+        TypeName typeName,
+        List<Element> fieldElements) {
+      buildSerializerCode(processor, typeBuilder, typeName, fieldElements);
+      buildFastSerializerCode(typeBuilder, typeName);
+    }
+
+    private static void buildSerializerCode(SerdeProcessor processor, Builder typeBuilder,
+        TypeName typeName,
+        List<Element> fieldElements) {
+      MethodSpec.Builder impl = MethodSpec.methodBuilder(SERIALIZER_IMPL)
+          .addModifiers(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
           .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
           .addParameter(ByteBuf.class, BUF_VAR_NAME, Modifier.FINAL)
           .addParameter(typeName, OBJECT_VAR_NAME, Modifier.FINAL)
@@ -250,49 +371,62 @@ public class SerdeProcessor extends AbstractProcessor {
       fieldElements.forEach(e -> {
         String fieldName = e.getSimpleName().toString();
         switch (e.asType().getKind()) {
-          case BOOLEAN -> builder.addStatement("$L.writeBoolean($L.$L())",
+          case BOOLEAN -> impl.addStatement("$L.writeBoolean($L.$L())",
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case BYTE -> builder.addStatement("$L.writeByte($L.$L())",
+          case BYTE -> impl.addStatement("$L.writeByte($L.$L())",
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case SHORT -> builder.addStatement("$L.writeShort($L.$L())",
+          case SHORT -> impl.addStatement("$L.writeShort($L.$L())",
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case CHAR -> builder.addStatement("$L.writeChar($L.$L())",
+          case CHAR -> impl.addStatement("$L.writeChar($L.$L())",
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case FLOAT -> builder.addStatement("$L.writeFloat($L.$L())",
+          case FLOAT -> impl.addStatement("$L.writeFloat($L.$L())",
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case DOUBLE -> builder.addStatement("$L.writeDouble($L.$L())",
+          case DOUBLE -> impl.addStatement("$L.writeDouble($L.$L())",
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case INT -> builder.addStatement("$L.writeVarInt32($L, $L.$L())",
+          case INT -> impl.addStatement("$L.writeVarInt32($L, $L.$L())",
               SERIALIZER_VAR_NAME,
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case LONG -> builder.addStatement("$L.writeVarInt64($L, $L.$L())",
+          case LONG -> impl.addStatement("$L.writeVarInt64($L, $L.$L())",
               SERIALIZER_VAR_NAME,
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          default -> builder.addStatement("$L.writeObject($L, $L.$L())",
-              SERIALIZER_VAR_NAME,
-              BUF_VAR_NAME,
-              OBJECT_VAR_NAME,
-              fieldName);
+          default -> impl.addStatement(tryFastSerialzier(processor, e,
+              CodeBlock
+                  .builder()
+                  .add("$L.$L()", OBJECT_VAR_NAME, fieldName)
+                  .build()
+          ));
         }
       });
 
-      return builder.build();
+      MethodSpec.Builder writeObject = MethodSpec.methodBuilder("writeObject")
+          .addAnnotation(Override.class)
+          .addModifiers(Modifier.PUBLIC)
+          .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
+          .addParameter(ByteBuf.class, BUF_VAR_NAME)
+          .addParameter(typeName, OBJECT_VAR_NAME)
+          .addStatement("$L($L, $L, $L)", SERIALIZER_IMPL, SERIALIZER_VAR_NAME, BUF_VAR_NAME,
+              OBJECT_VAR_NAME)
+          .returns(TypeName.VOID);
+
+      typeBuilder
+          .addMethod(impl.build())
+          .addMethod(writeObject.build());
     }
 
   }
@@ -340,9 +474,12 @@ public class SerdeProcessor extends AbstractProcessor {
       List<Element> fields = new ArrayList<>();
       for (TypeElement typeElement : clazzs) {
         List<Element> fieldElements = typeElement.getEnclosedElements().stream()
-            .filter(e -> e.getKind() == ElementKind.FIELD).filter(
-                e -> !(e.getModifiers().contains(Modifier.FINAL) || e.getModifiers()
-                    .contains(Modifier.STATIC) || e.getModifiers().contains(Modifier.TRANSIENT)))
+            .filter(e -> e.getKind() == ElementKind.FIELD)
+            .filter(e -> !(
+                e.getModifiers().contains(Modifier.FINAL) ||
+                    e.getModifiers().contains(Modifier.STATIC) ||
+                    e.getModifiers().contains(Modifier.TRANSIENT)
+            ))
             .collect(Collectors.toUnmodifiableList());
 
         fields.addAll(fieldElements);
@@ -351,119 +488,162 @@ public class SerdeProcessor extends AbstractProcessor {
       return fields;
     }
 
-    public static MethodSpec deSerializerCode(TypeName typeName, List<Element> fieldElements) {
-      MethodSpec.Builder builder = MethodSpec.methodBuilder("readObject")
-          .addAnnotation(Override.class)
-          .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-          .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
-          .addParameter(ByteBuf.class, BUF_VAR_NAME, Modifier.FINAL)
-          .addStatement("$T $L = new $T()", typeName, OBJECT_VAR_NAME, typeName).returns(typeName);
+    public static void deSerializerCode(SerdeProcessor processor, TypeSpec.Builder typeBuilder,
+        TypeName typeName,
+        List<Element> fieldElements) {
 
-      fieldElements.forEach(e -> {
-        String fieldName = StringUtils.capitalize(e.getSimpleName().toString());
-        switch (e.asType().getKind()) {
-          case BOOLEAN -> builder.addStatement("$L.set$L($L.readBoolean())",
-              OBJECT_VAR_NAME,
-              fieldName,
-              BUF_VAR_NAME);
-          case BYTE -> builder.addStatement("$L.set$L($L.readByte())",
-              OBJECT_VAR_NAME,
-              fieldName,
-              BUF_VAR_NAME);
-          case SHORT -> builder.addStatement("$L.set$L($L.readShort())",
-              OBJECT_VAR_NAME,
-              fieldName,
-              BUF_VAR_NAME);
-          case CHAR -> builder.addStatement("$L.set$L($L.readChar())",
-              OBJECT_VAR_NAME,
-              fieldName,
-              BUF_VAR_NAME);
-          case FLOAT -> builder.addStatement("$L.set$L($L.readFloat())",
-              OBJECT_VAR_NAME,
-              fieldName,
-              BUF_VAR_NAME);
-          case DOUBLE -> builder.addStatement("$L.set$L($L.readDouble())",
-              OBJECT_VAR_NAME,
-              fieldName,
-              BUF_VAR_NAME);
-          case INT -> builder.addStatement("$L.set$L($L.readVarInt32($L))",
-              OBJECT_VAR_NAME,
-              fieldName,
-              SERIALIZER_VAR_NAME,
-              BUF_VAR_NAME);
-          case LONG -> builder.addStatement("$L.set$L($L.readVarInt64($L))",
-              OBJECT_VAR_NAME,
-              fieldName,
-              SERIALIZER_VAR_NAME,
-              BUF_VAR_NAME);
-          default -> builder.addStatement("$L.set$L($L.readObject(buf))",
-              OBJECT_VAR_NAME,
-              fieldName,
-              SERIALIZER_VAR_NAME);
-        }
-      });
-
-      builder.addStatement("return object");
-      return builder.build();
+      buildDeSerialzier(processor, typeBuilder, typeName, fieldElements);
+      buildFastDeSerialzier(typeBuilder, typeName);
     }
 
-    public static MethodSpec serializerCode(TypeName typeName, List<Element> fieldElements) {
-      MethodSpec.Builder builder = MethodSpec.methodBuilder("writeObject")
+    private static void buildDeSerialzier(SerdeProcessor processor, Builder typeBuilder,
+        TypeName typeName,
+        List<Element> fieldElements) {
+      MethodSpec.Builder impl = MethodSpec.methodBuilder(DESERIALZIER_IMPL)
+          .addModifiers(Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
+          .addParameter(Serdes.class, SERIALIZER_VAR_NAME, Modifier.FINAL)
+          .addParameter(ByteBuf.class, BUF_VAR_NAME, Modifier.FINAL)
+          .addStatement("$T $L = new $T()", typeName, OBJECT_VAR_NAME, typeName)
+          .returns(typeName);
+
+      for (Element e : fieldElements) {
+        String fieldName = StringUtils.capitalize(e.getSimpleName().toString());
+        switch (e.asType().getKind()) {
+          case BOOLEAN -> impl.addStatement("$L.set$L($L.readBoolean())",
+              OBJECT_VAR_NAME,
+              fieldName,
+              BUF_VAR_NAME);
+          case BYTE -> impl.addStatement("$L.set$L($L.readByte())",
+              OBJECT_VAR_NAME,
+              fieldName,
+              BUF_VAR_NAME);
+          case SHORT -> impl.addStatement("$L.set$L($L.readShort())",
+              OBJECT_VAR_NAME,
+              fieldName,
+              BUF_VAR_NAME);
+          case CHAR -> impl.addStatement("$L.set$L($L.readChar())",
+              OBJECT_VAR_NAME,
+              fieldName,
+              BUF_VAR_NAME);
+          case FLOAT -> impl.addStatement("$L.set$L($L.readFloat())",
+              OBJECT_VAR_NAME,
+              fieldName,
+              BUF_VAR_NAME);
+          case DOUBLE -> impl.addStatement("$L.set$L($L.readDouble())",
+              OBJECT_VAR_NAME,
+              fieldName,
+              BUF_VAR_NAME);
+          case INT -> impl.addStatement("$L.set$L($L.readVarInt32($L))",
+              OBJECT_VAR_NAME,
+              fieldName,
+              SERIALIZER_VAR_NAME,
+              BUF_VAR_NAME);
+          case LONG -> impl.addStatement("$L.set$L($L.readVarInt64($L))",
+              OBJECT_VAR_NAME,
+              fieldName,
+              SERIALIZER_VAR_NAME,
+              BUF_VAR_NAME);
+          default -> impl.addStatement("$L.set$L($L)",
+              OBJECT_VAR_NAME,
+              fieldName,
+              tryFastDeSerialzier(processor, e)
+          );
+        }
+      }
+
+      impl.addStatement("return object");
+
+      MethodSpec.Builder readObject = MethodSpec.methodBuilder("readObject")
           .addAnnotation(Override.class)
           .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
           .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
-          .addParameter(ByteBuf.class, BUF_VAR_NAME, Modifier.FINAL)
-          .addParameter(typeName, OBJECT_VAR_NAME, Modifier.FINAL)
+          .addParameter(ByteBuf.class, BUF_VAR_NAME)
+          .addStatement("return $L($L, $L)", DESERIALZIER_IMPL, SERIALIZER_VAR_NAME, BUF_VAR_NAME)
+          .returns(typeName);
+
+      typeBuilder
+          .addMethod(impl.build())
+          .addMethod(readObject.build());
+    }
+
+
+    public static void serializerCode(SerdeProcessor processor, TypeSpec.Builder typeBuilder,
+        TypeName typeName,
+        List<Element> fieldElements) {
+      buildSerializerCode(processor, typeBuilder, typeName, fieldElements);
+      buildFastSerializerCode(typeBuilder, typeName);
+    }
+
+    private static void buildSerializerCode(SerdeProcessor processor, Builder typeBuilder,
+        TypeName typeName,
+        List<Element> fieldElements) {
+      MethodSpec.Builder impl = MethodSpec.methodBuilder(SERIALIZER_IMPL)
+          .addModifiers(Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
+          .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
+          .addParameter(ByteBuf.class, BUF_VAR_NAME)
+          .addParameter(typeName, OBJECT_VAR_NAME)
           .returns(TypeName.VOID);
 
       fieldElements.forEach(e -> {
         String fieldName = StringUtils.capitalize(e.getSimpleName().toString());
         switch (e.asType().getKind()) {
-          case BOOLEAN -> builder.addStatement("$L.writeBoolean($L.is$L())",
+          case BOOLEAN -> impl.addStatement("$L.writeBoolean($L.is$L())",
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case BYTE -> builder.addStatement("$L.writeByte($L.get$L())",
+          case BYTE -> impl.addStatement("$L.writeByte($L.get$L())",
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case SHORT -> builder.addStatement("$L.writeShort($L.get$L())",
+          case SHORT -> impl.addStatement("$L.writeShort($L.get$L())",
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case CHAR -> builder.addStatement("$L.writeChar($L.get$L())",
+          case CHAR -> impl.addStatement("$L.writeChar($L.get$L())",
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case FLOAT -> builder.addStatement("$L.writeFloat($L.get$L())",
+          case FLOAT -> impl.addStatement("$L.writeFloat($L.get$L())",
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case DOUBLE -> builder.addStatement("$L.writeDouble($L.get$L())",
+          case DOUBLE -> impl.addStatement("$L.writeDouble($L.get$L())",
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case INT -> builder.addStatement("$L.writeVarInt32($L, $L.get$L())",
+          case INT -> impl.addStatement("$L.writeVarInt32($L, $L.get$L())",
               SERIALIZER_VAR_NAME,
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          case LONG -> builder.addStatement("$L.writeVarInt64($L, $L.get$L())",
+          case LONG -> impl.addStatement("$L.writeVarInt64($L, $L.get$L())",
               SERIALIZER_VAR_NAME,
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          default -> builder.addStatement("$L.writeObject($L, $L.get$L())",
-              SERIALIZER_VAR_NAME,
-              BUF_VAR_NAME,
-              OBJECT_VAR_NAME,
-              fieldName);
+          default -> tryFastSerialzier(processor, e,
+              CodeBlock
+                  .builder()
+                  .add("$L.get$L()", OBJECT_VAR_NAME, fieldName)
+                  .build()
+          );
         }
       });
 
-      return builder.build();
-    }
+      MethodSpec.Builder writeObject = MethodSpec.methodBuilder("writeObject")
+          .addAnnotation(Override.class)
+          .addModifiers(Modifier.PUBLIC)
+          .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
+          .addParameter(ByteBuf.class, BUF_VAR_NAME)
+          .addParameter(typeName, OBJECT_VAR_NAME)
+          .addStatement("$L($L, $L, $L)", SERIALIZER_IMPL, SERIALIZER_VAR_NAME, BUF_VAR_NAME,
+              OBJECT_VAR_NAME)
+          .returns(TypeName.VOID);
 
+      typeBuilder
+          .addMethod(impl.build())
+          .addMethod(writeObject.build());
+    }
   }
 
 

@@ -77,6 +77,7 @@ public class SerdeTest {
 
     Assertions.assertEquals(req, reqMove);
     Assertions.assertEquals(res, resMove);
+    Assertions.assertFalse(byteBuf.isReadable());
   }
 
 

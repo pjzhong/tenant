@@ -19,7 +19,7 @@ public class DefaultSerializersRegister {
    * @since 2021年07月19日 23:00:35
    */
   public void register(Serdes serdes) {
-    serdes.registerSerializer(0, NullSerializer.class, new NullSerializer());
+    serdes.registerSerializer(Serdes.NULL_ID, NullSerializer.class, new NullSerializer());
     serdes.registerSerializer(1, Byte.class, new ByteSerializer());
     serdes.registerSerializer(2, Boolean.class, new BooleanSerializer());
     serdes.registerSerializer(3, Short.class, new ShortSerializer());

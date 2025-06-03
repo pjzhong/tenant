@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -63,6 +62,7 @@ import org.example.net.anno.Req;
 @AutoService(Processor.class)
 public class RpcHandlerProcessor extends AbstractProcessor {
 
+  public static final String DISPATCHER_VAR_NAME = "dispatcher";
   private static final String CONNECTION_VAR_NAME = "c";
   private static final String MESSAGE_VAR_NAME = "m";
   private static final String BUF_VAR_NAME = "b";
@@ -141,7 +141,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
 
     TypeSpec.Builder typeSpecBuilder = TypeSpec.classBuilder(simpleName)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-        .addSuperinterface(Util.HANDLER_INTERFACE)
+        //.addSuperinterface(Util.HANDLER_INTERFACE)
         .addAnnotation(Util.COMPONENT_ANNOTATION)
         .addField(FieldSpec
             .builder(facdeTypeName, FACADE_VAR_NAME)
@@ -179,28 +179,18 @@ public class RpcHandlerProcessor extends AbstractProcessor {
   }
 
   void buildHandlerMethod(TypeSpecInfo info) {
-    MethodSpec.Builder invoker = MethodSpec.methodBuilder("invoke")
-        .addAnnotation(Override.class)
-        .addModifiers(Modifier.PUBLIC)
-        .addParameter(CONNECTION_PARAM_SPEC)
-        .addParameter(MESSAGE_PARAM_SPEC)
-        .addException(Exception.class);
+    MethodSpec.Builder registerMethod = buildRegisterMethod(info);
 
-    invoker.beginControlFlow("switch(m.proto())");
-    IntList ids = buildHandlerMethod0(info, invoker);
-    invoker
-        .addStatement(
-            "default -> throw new UnsupportedOperationException(\"【$L】无法处理消息，原因:【缺少对应方法】，消息ID:【%s】\".formatted($L.proto()))",
-            info.typeElement.getSimpleName(), MESSAGE_VAR_NAME)
-        .endControlFlow().addCode(";");
+    //invoker.beginControlFlow("switch(m.proto())");
+    buildHandlerMethod0(info, registerMethod);
+//
 
     info.builder
-        .addMethod(buildRegisterMethod(info, ids))
-        .addMethod(invoker.build());
+        .addMethod(registerMethod.build());
   }
 
   private IntList buildHandlerMethod0(TypeSpecInfo info,
-      MethodSpec.Builder handlerMethod) {
+      MethodSpec.Builder registerMethod) {
     IntList intList = new IntArrayList();
     for (ExecutableElement element : info.methods) {
       final int id = Util.calcProtoId(info.typeElement, element);
@@ -222,8 +212,8 @@ public class RpcHandlerProcessor extends AbstractProcessor {
           .addParameter(MESSAGE_PARAM_SPEC)
           .addModifiers(Modifier.PRIVATE);
 
-      handlerMethod.addStatement("case $L -> $L($L, $L)", id, methodName, CONNECTION_VAR_NAME,
-          MESSAGE_VAR_NAME);
+      registerMethod.addStatement("$L.registeHandler($L, this::$L)", DISPATCHER_VAR_NAME, id,
+          methodName);
 
       methodBuilder.addStatement("$T $L = $L.packet()", BYTE_BUF, BUF_VAR_NAME, MESSAGE_VAR_NAME);
 
@@ -355,21 +345,14 @@ public class RpcHandlerProcessor extends AbstractProcessor {
     return codeBlock;
   }
 
-  private MethodSpec buildRegisterMethod(TypeSpecInfo info, IntList intList) {
-    final String dispatcherVarName = "dispatcher";
-    StringJoiner joiner = new StringJoiner(",", "{", "}");
-    for (int id : intList) {
-      joiner.add(String.valueOf(id));
-    }
+  private MethodSpec.Builder buildRegisterMethod(TypeSpecInfo info) {
 
     info.builder.addSuperinterface(HandlerRegister.class);
-    MethodSpec.Builder registerMethod = MethodSpec.methodBuilder("register")
+
+    return MethodSpec.methodBuilder("register")
         .addAnnotation(Override.class)
         .addModifiers(Modifier.PUBLIC)
-        .addParameter(DefaultDispatcher.class, dispatcherVarName)
-        .addStatement("$L.registeHandlers(new int[]$L, this)", dispatcherVarName, joiner);
-
-    return registerMethod.build();
+        .addParameter(DefaultDispatcher.class, DISPATCHER_VAR_NAME);
   }
 
   private static boolean hasReturnValue(ExecutableElement executableElement) {

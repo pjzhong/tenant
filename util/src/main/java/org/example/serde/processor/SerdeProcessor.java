@@ -233,7 +233,7 @@ public class SerdeProcessor extends AbstractProcessor {
     Element fullElement = processor.processingEnv.getTypeUtils().asElement(element.asType());
 
     CodeBlock.Builder builder = CodeBlock.builder();
-    if (fullElement.getAnnotation(Serde.class) != null) {
+    if (fullElement != null && fullElement.getAnnotation(Serde.class) != null) {
       TypeElement clazz = (TypeElement) fullElement;
       ClassName typeName = ClassName.get(clazz);
       ClassName serderTypeName = ClassName.get(typeName.packageName(),
@@ -258,7 +258,7 @@ public class SerdeProcessor extends AbstractProcessor {
     Element fullElement = processor.processingEnv.getTypeUtils().asElement(element.asType());
 
     CodeBlock.Builder builder = CodeBlock.builder();
-    if (fullElement.getAnnotation(Serde.class) != null) {
+    if (fullElement != null && fullElement.getAnnotation(Serde.class) != null) {
       TypeElement clazz = (TypeElement) fullElement;
       ClassName typeName = ClassName.get(clazz);
       ClassName serderTypeName = ClassName.get(typeName.packageName(),
@@ -621,12 +621,12 @@ public class SerdeProcessor extends AbstractProcessor {
               BUF_VAR_NAME,
               OBJECT_VAR_NAME,
               fieldName);
-          default -> tryFastSerialzier(processor, e,
+          default -> impl.addStatement(tryFastSerialzier(processor, e,
               CodeBlock
                   .builder()
                   .add("$L.get$L()", OBJECT_VAR_NAME, fieldName)
                   .build()
-          );
+          ));
         }
       });
 

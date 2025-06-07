@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -36,11 +35,9 @@ public class CollectionSerializerTest {
     new DefaultSerializersRegister().register(serializer);
     CollectionSerializer collectSer = new CollectionSerializer();
 
-    serializer.registerSerializer(Collection.class, collectSer);
-    serializer.registerSerializer(List.class, collectSer);
-    serializer.registerSerializer(ArrayList.class, collectSer);
+    serializer.registerSerializer(collectSer.getType(), collectSer);
     serializer.registerSerializer(LinkedList.class,
-        new CollectionSerializer(i -> new LinkedList<>()));
+        new CollectionSerializer(LinkedList.class, i -> new LinkedList<>()));
   }
 
   @RepeatedTest(3)

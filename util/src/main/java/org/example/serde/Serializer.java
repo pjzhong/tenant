@@ -43,4 +43,13 @@ public interface Serializer<T> {
    * @since 2021年07月17日 16:02:03
    */
   void writeObject(Serdes serializer, ByteBuf buf, T object);
+
+  /**
+   * 此序列化实现，能否为提供的{@code clazz}进行序列化和反序列化操作
+   *
+   * @since 2025/6/7 10:21
+   */
+  default boolean isSupport(Serdes serdes, Class<?> clazz) {
+    return false;
+  }
 }

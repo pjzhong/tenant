@@ -3,6 +3,7 @@ package org.example.serde;
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.IntFunction;
 
@@ -26,21 +27,28 @@ import java.util.function.IntFunction;
  **/
 public class CollectionSerializer implements Serializer<Object> {
 
+  private final Class<?> type;
+
   /**
    * 集合提供者
    */
-  private IntFunction<Collection<Object>> factory;
+  private final IntFunction<Collection<Object>> factory;
+
+  public Class<?> getType() {
+    return type;
+  }
 
   public CollectionSerializer() {
-    this(ArrayList::new);
+    this(List.class, ArrayList::new);
   }
 
   /**
    * @param factory 根据长度创建一个集合
    * @since 2024/8/8 22:36
    */
-  public CollectionSerializer(IntFunction<Collection<Object>> factory) {
+  public CollectionSerializer(Class<?> type, IntFunction<Collection<Object>> factory) {
     this.factory = factory;
+    this.type = type;
   }
 
   @Override
@@ -89,6 +97,16 @@ public class CollectionSerializer implements Serializer<Object> {
         serializer.writeObject(buf, o);
       }
     }
+  }
+
+  /**
+   * 此序列化实现，能否为提供的{@code clazz}进行序列化和反序列化操作
+   *
+   * @since 2025/6/7 10:21
+   */
+  @Override
+  public boolean isSupport(Serdes serdes, Class<?> clazz) {
+    return type.isAssignableFrom(clazz);
   }
 
 

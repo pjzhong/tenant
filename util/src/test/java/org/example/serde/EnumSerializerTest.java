@@ -36,7 +36,6 @@ public class EnumSerializerTest {
     serializer.registerObject(EnumOne.class);
     serializer.registerObject(EnumTwo.class);
     serializer.registerSerializer(List.class, new CollectionSerializer());
-    serializer.registerSerializer(ArrayList.class, new CollectionSerializer());
     serializer.registerObject(EnumOne[].class);
     serializer.registerObject(TestCaseOne.class);
 

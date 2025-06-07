@@ -33,13 +33,12 @@ public class SetSerializerTest {
     buf = Unpooled.buffer();
 
     new DefaultSerializersRegister().register(serializer);
-    CollectionSerializer collectSer = new CollectionSerializer(HashSet::new);
-    serializer.registerSerializer(Set.class, collectSer);
-    serializer.registerSerializer(HashSet.class, collectSer);
+    CollectionSerializer collectSer = new CollectionSerializer(Set.class, HashSet::new);
+    serializer.registerSerializer(collectSer.getType(), collectSer);
     serializer.registerSerializer(LinkedHashSet.class,
-        new CollectionSerializer(LinkedHashSet::new));
+        new CollectionSerializer(LinkedHashSet.class, LinkedHashSet::new));
     serializer.registerSerializer(TreeSet.class,
-        new CollectionSerializer(ignore -> new TreeSet<>()));
+        new CollectionSerializer(TreeSet.class, ignore -> new TreeSet<>()));
   }
 
   @Test

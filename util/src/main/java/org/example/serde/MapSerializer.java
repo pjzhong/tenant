@@ -25,17 +25,24 @@ import java.util.function.IntFunction;
  **/
 public class MapSerializer<K, V> implements Serializer<Map<K, V>> {
 
+  private final Class<?> type;
   /**
    * Map工厂
    */
-  private IntFunction<Map<K, V>> supplier;
+  private final IntFunction<Map<K, V>> supplier;
 
   public MapSerializer() {
-    this(HashMap::new);
+    this(Map.class, HashMap::new);
   }
 
-  public MapSerializer(IntFunction<Map<K, V>> mapSupplier) {
+  public MapSerializer(Class<?> type, IntFunction<Map<K, V>> mapSupplier) {
+    this.type = type;
     this.supplier = mapSupplier;
+  }
+
+
+  public Class<?> getType() {
+    return type;
   }
 
   @Override
@@ -94,6 +101,11 @@ public class MapSerializer<K, V> implements Serializer<Map<K, V>> {
       serializer.writeObject(buf, key);
       serializer.writeObject(buf, val);
     }
+  }
+
+  @Override
+  public boolean isSupport(Serdes serdes, Class<?> clazz) {
+    return type.isAssignableFrom(clazz);
   }
 
 }

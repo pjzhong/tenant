@@ -2,6 +2,7 @@ package org.example.serde;
 
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -207,15 +208,23 @@ public final class Serdes {
 
   @SuppressWarnings("unchecked")
   public void writeObject(ByteBuf buf, Object object) {
-    Class<?> clazz = object == null ? NullSerializer.class : object.getClass();
+    if (object == null) {
+      writeNull(buf);
+      return;
+    }
+
+    Class<?> clazz = object.getClass();
     SerializerPair pair = getSerializerPair(clazz);
+    if (pair == null) {
+      pair = trySerachAndBindSerializer(clazz);
+    }
+
+    if (pair == null) {
+      throw new RuntimeException("类型:" + clazz + "，未注册");
+    }
 
     int writeIdx = buf.writerIndex();
     try {
-      if (pair == null) {
-        throw new RuntimeException("类型:" + clazz + "，未注册");
-      }
-
       Serializer<Object> serializer = (Serializer<Object>) pair.serializer;
       writeVarInt32(buf, pair.typeId);
       serializer.writeObject(this, buf, object);
@@ -223,5 +232,16 @@ public final class Serdes {
       buf.writerIndex(writeIdx);
       throw new RuntimeException("类型:" + clazz + ",序列化错误", e);
     }
+  }
+
+  private SerializerPair trySerachAndBindSerializer(Class<?> clazz) {
+    SerializerPair pair = id2Serders.values().stream()
+        .filter(s -> s.serializer.isSupport(this, clazz))
+        .min(Comparator.comparingInt(a -> a.typeId))
+        .orElse(null);
+    if (pair != null) {
+      type2Serders.put(clazz, pair);
+    }
+    return pair;
   }
 }

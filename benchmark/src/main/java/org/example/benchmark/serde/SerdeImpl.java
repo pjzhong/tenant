@@ -2,7 +2,7 @@ package org.example.benchmark.serde;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.example.serde.CollectionSerializer;
 import org.example.serde.DefaultSerializersRegister;
@@ -33,7 +33,7 @@ public class SerdeImpl {
     codeSerde = new Serdes();
     new DefaultSerializersRegister().register(codeSerde);
     codeSerde.registerSerializer(CodecObject.class, new CodecObjectSerde());
-    codeSerde.registerSerializer(ArrayList.class, new CollectionSerializer());
+    codeSerde.registerSerializer(List.class, new CollectionSerializer());
 
     buf = Unpooled.buffer(1024);
   }

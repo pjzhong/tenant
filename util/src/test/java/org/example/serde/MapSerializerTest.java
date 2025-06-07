@@ -27,13 +27,12 @@ public class MapSerializerTest {
 
     new DefaultSerializersRegister().register(serializer);
 
-    MapSerializer<?, ?> map = new MapSerializer<>(HashMap::new);
-    serializer.registerSerializer(Map.class, map);
-    serializer.registerSerializer(HashMap.class, map);
+    MapSerializer<?, ?> map = new MapSerializer<>();
+    serializer.registerSerializer(map.getType(), map);
     serializer.registerSerializer(LinkedHashMap.class,
-        new MapSerializer<>(LinkedHashMap::new));
+        new MapSerializer<>(LinkedHashMap.class, LinkedHashMap::new));
     serializer.registerSerializer(TreeMap.class,
-        new MapSerializer<>(ignore -> new TreeMap<>()));
+        new MapSerializer<>(TreeMap.class, ignore -> new TreeMap<>()));
   }
 
   @Test

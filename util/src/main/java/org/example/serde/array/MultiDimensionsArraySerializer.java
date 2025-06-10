@@ -7,59 +7,47 @@ import org.example.serde.Serdes.SerializerPair;
 import org.example.serde.Serializer;
 
 /**
- * JAVA数组序列化
- *
- *
- * <pre>
- *   一维数组:
- *
- *    元素类型|长度|元素1|元素2|
- *
- *
- *  二维数组(都压缩成一维数组)
- *
- *    长度=N|元素1|......|元素N
- *
- *
- *    长度:1-5字节, 使用varint32和ZigZag编码
- *    元素:实现决定
- * </pre>
- * <p>1.数组长宽必须一致</p>
- * <p>2.暂时不支持PrimitiveWrapper数组，序列化时会全部转化为对应的基础类型</p>
+ * 多维数组序列化实现
  * <p>
  * 与{@link Serdes} 组合使用
  *
  * @since 2021年07月18日 14:17:04
  **/
-public class OneDimensionArraySerializer implements Serializer<Object> {
 
+public class MultiDimensionsArraySerializer implements Serializer<Object> {
 
-  public OneDimensionArraySerializer() {
+  private final int dimension;
+
+  public MultiDimensionsArraySerializer(int dimension) {
+    if (dimension <= 0) {
+      throw new IllegalArgumentException("dimension 必须大于0");
+    }
+
+    this.dimension = dimension;
   }
-
 
   @Override
   public Object readObject(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
-    if (length < 0) {
-      return null;
-    }
 
     Class<?> componentType;
     int typeId = serializer.readVarInt32(buf);
     if (serializer.isNullId(typeId)) {
       componentType = Object.class;
     } else {
-      SerializerPair pair = serializer.getSerializerPair(typeId);
-      if (pair == null) {
-        throw new UnsupportedOperationException("类型ID:" + typeId + ",未注册");
+      SerializerPair componentPair = serializer.getSerializerPair(typeId);
+      if (componentPair == null) {
+        throw new UnsupportedOperationException("类型ID:%s,未注册, 多维数组序列化失败");
       }
 
-      componentType = pair.clz();
+      componentType = componentPair.clz();
     }
 
-    Object array = Array.newInstance(componentType, length);
-    for (int i = 0; i < length; ++i) {
+    int[] dimensions = new int[dimension];
+    dimensions[0] = length;
+    Object array = Array.newInstance(componentType, dimensions);
+
+    for (int i = 0; i < length; i++) {
       Array.set(array, i, serializer.readObject(buf));
     }
     return array;
@@ -71,7 +59,8 @@ public class OneDimensionArraySerializer implements Serializer<Object> {
     final int length = Array.getLength(object);
     serializer.writeVarInt32(buf, length);
 
-    Class<?> componentType = object.getClass().getComponentType();
+    Class<?> componentType = getComponentType(object);
+
     if (componentType == Object.class) {
       serializer.writeNull(buf);
     } else {
@@ -93,6 +82,18 @@ public class OneDimensionArraySerializer implements Serializer<Object> {
     }
   }
 
+  private static Class<?> getComponentType(Object object) {
+    Class<?> c = object.getClass();
+    if (!c.isArray()) {
+      return null;
+    }
+
+    while (c.isArray()) {
+      c = c.getComponentType();
+    }
+    return c;
+  }
+
   @Override
   public boolean isSupport(Serdes serdes, Class<?> clazz) {
     if (clazz == null || !clazz.isArray()) {
@@ -105,6 +106,6 @@ public class OneDimensionArraySerializer implements Serializer<Object> {
       clazz = clazz.getComponentType();
     }
 
-    return dimensions == 1;
+    return dimensions == dimension;
   }
 }

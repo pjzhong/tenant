@@ -20,4 +20,9 @@ public class LongSerializer implements Serializer<Long> {
   public void writeObject(Serdes serializer, ByteBuf buf, Long object) {
     serializer.writeVarInt64(buf, object);
   }
+
+  @Override
+  public boolean isSupport(Serdes serdes, Class<?> clazz) {
+    return long.class == clazz || Long.class == clazz;
+  }
 }

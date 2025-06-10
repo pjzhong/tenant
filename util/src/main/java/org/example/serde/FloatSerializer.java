@@ -20,4 +20,9 @@ public class FloatSerializer implements Serializer<Float> {
   public void writeObject(Serdes serializer, ByteBuf buf, Float object) {
     buf.writeFloat(object);
   }
+
+  @Override
+  public boolean isSupport(Serdes serdes, Class<?> clazz) {
+    return float.class == clazz || Float.class == clazz;
+  }
 }

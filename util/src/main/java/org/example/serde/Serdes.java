@@ -6,7 +6,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import org.example.serde.array.ArraySerializer;
+import org.example.serde.array.MultiDimensionsArraySerializer;
+import org.example.serde.array.OneDimensionArraySerializer;
 import org.example.util.NettyByteBufUtil;
 
 /**
@@ -61,7 +62,7 @@ public final class Serdes {
     Objects.requireNonNull(clazz);
 
     if (clazz.isArray()) {
-      registerSerializer(id, clazz, new ArraySerializer(clazz.getComponentType()));
+      registerSerializer(id, clazz, createArraySerializer(clazz));
     } else if (clazz.isRecord()) {
       Serializer<?> serializer = new RecordSerializer(clazz);
       registerSerializer(id, clazz, serializer);
@@ -71,6 +72,20 @@ public final class Serdes {
       ObjectSerializer.checkClass(clazz);
       Serializer<?> serializer = new ObjectSerializer(clazz);
       registerSerializer(id, clazz, serializer);
+    }
+  }
+
+  private Serializer<Object> createArraySerializer(Class<?> arrayType) {
+    int dimension = 0;
+    while (arrayType.isArray()) {
+      dimension += 1;
+      arrayType = arrayType.getComponentType();
+    }
+
+    if (dimension == 1) {
+      return new OneDimensionArraySerializer();
+    } else {
+      return new MultiDimensionsArraySerializer(dimension);
     }
   }
 

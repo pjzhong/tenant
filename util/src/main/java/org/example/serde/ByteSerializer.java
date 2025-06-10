@@ -20,4 +20,9 @@ public class ByteSerializer implements Serializer<Byte> {
   public void writeObject(Serdes serializer, ByteBuf buf, Byte object) {
     buf.writeByte(object);
   }
+
+  @Override
+  public boolean isSupport(Serdes serdes, Class<?> clazz) {
+    return byte.class == clazz || Byte.class == clazz;
+  }
 }

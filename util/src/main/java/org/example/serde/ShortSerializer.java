@@ -20,4 +20,9 @@ public class ShortSerializer implements Serializer<Short> {
   public void writeObject(Serdes serializer, ByteBuf buf, Short object) {
     buf.writeShort(object);
   }
+
+  @Override
+  public boolean isSupport(Serdes serdes, Class<?> clazz) {
+    return short.class == clazz || Short.class == clazz;
+  }
 }

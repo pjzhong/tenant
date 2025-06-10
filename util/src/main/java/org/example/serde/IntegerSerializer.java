@@ -20,4 +20,9 @@ public class IntegerSerializer implements Serializer<Integer> {
   public void writeObject(Serdes serializer, ByteBuf buf, Integer object) {
     serializer.writeVarInt32(buf, object);
   }
+
+  @Override
+  public boolean isSupport(Serdes serdes, Class<?> clazz) {
+    return int.class == clazz || Integer.class == clazz;
+  }
 }

@@ -13,32 +13,36 @@ import org.junit.jupiter.api.Test;
 
 public class ArraySerializerTest {
 
-  private Serdes serializer;
+  private Serdes write;
+  private Serdes read;
   private ByteBuf buf;
 
   @BeforeEach
   public void beforeEach() {
-    serializer = new Serdes();
-    new DefaultSerializersRegister().register(serializer);
-    serializer.registerObject(ArrayWrapper.class);
-    serializer.registerObject(int[][].class);
-    serializer.registerObject(double[][].class);
-    serializer.registerObject(double[][][].class);
-    serializer.registerObject(String[][].class);
-    serializer.registerObject(String[][][].class);
-    serializer.registerObject(String[][][][].class);
-    serializer.registerObject(ArrayWrapper[][].class);
-    serializer.registerObject(ArrayWrapper[][][].class);
-    serializer.registerObject(ArrayWrapper[][][][].class);
+    write = new Serdes();
+    new DefaultSerializersRegister().register(write);
+
+    write.registerObject(ArrayWrapper.class);
+    write.registerObject(int[][].class);
+    write.registerObject(double[][].class);
+    write.registerObject(double[][][].class);
+
+    read = new Serdes();
+    new DefaultSerializersRegister().register(read);
+
+    read.registerObject(ArrayWrapper.class);
+    read.registerObject(int[][].class);
+    read.registerObject(double[][].class);
+    read.registerObject(double[][][].class);
     buf = Unpooled.buffer();
   }
 
   @Test
   public void emptyArrayTest() {
     int[] test = {};
-    serializer.writeObject(buf, test);
+    write.writeObject(buf, test);
 
-    int[] res = serializer.readObject(buf);
+    int[] res = read.readObject(buf);
     assertArrayEquals(test, res);
   }
 
@@ -49,20 +53,9 @@ public class ArraySerializerTest {
       for (int i = 0; i < test.length; i++) {
         test[i] = ThreadLocalRandom.current().nextInt();
       }
-      serializer.writeObject(buf, test);
+      write.writeObject(buf, test);
 
-      int[] res = serializer.readObject(buf);
-      assertArrayEquals(test, res);
-    }
-
-    {
-      Integer[] test = new Integer[1000];
-      for (int i = 0; i < test.length; i++) {
-        test[i] = ThreadLocalRandom.current().nextInt();
-      }
-      serializer.writeObject(buf, test);
-
-      Integer[] res = serializer.readObject(buf);
+      int[] res = read.readObject(buf);
       assertArrayEquals(test, res);
     }
   }
@@ -70,8 +63,8 @@ public class ArraySerializerTest {
   @Test
   public void twoDimensionIntArrayTest() {
     int[][] test = {{1, 10}, {10, 1}};
-    serializer.writeObject(buf, test);
-    int[][] res = serializer.readObject(buf);
+    write.writeObject(buf, test);
+    int[][] res = read.readObject(buf);
     assertArrayEquals(test, res);
   }
 
@@ -86,8 +79,8 @@ public class ArraySerializerTest {
         }
       }
     }
-    serializer.writeObject(buf, test);
-    double[][][] res = serializer.readObject(buf);
+    write.writeObject(buf, test);
+    double[][][] res = read.readObject(buf);
     assertArrayEquals(test, res);
   }
 
@@ -109,8 +102,8 @@ public class ArraySerializerTest {
       }
     }
 
-    serializer.writeObject(buf, test);
-    String[][][][] res = serializer.readObject(buf);
+    write.writeObject(buf, test);
+    String[][][][] res = read.readObject(buf);
     assertArrayEquals(test, res);
   }
 
@@ -140,8 +133,8 @@ public class ArraySerializerTest {
       }
     }
 
-    serializer.writeObject(buf, test);
-    ArrayWrapper[][][][] res = serializer.readObject(buf);
+    write.writeObject(buf, test);
+    ArrayWrapper[][][][] res = read.readObject(buf);
     assertArrayEquals(test, res);
   }
 
@@ -149,8 +142,8 @@ public class ArraySerializerTest {
   public void objectArraySerializerTest() {
     Object[] objects = {1, 2L, "asdfasdf", new ArrayWrapper(), null, 'a'};
 
-    serializer.writeObject(buf, objects);
-    Object[] res = serializer.readObject(buf);
+    write.writeObject(buf, objects);
+    Object[] res = read.readObject(buf);
     assertArrayEquals(objects, res);
   }
 

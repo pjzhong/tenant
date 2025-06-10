@@ -20,4 +20,9 @@ public class DoubleSerializer implements Serializer<Double> {
   public void writeObject(Serdes serializer, ByteBuf buf, Double object) {
     buf.writeDouble(object);
   }
+
+  @Override
+  public boolean isSupport(Serdes serdes, Class<?> clazz) {
+    return double.class == clazz || Double.class == clazz;
+  }
 }

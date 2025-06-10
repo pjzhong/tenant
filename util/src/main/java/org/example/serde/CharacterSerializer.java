@@ -20,4 +20,9 @@ public class CharacterSerializer implements Serializer<Character> {
   public void writeObject(Serdes serializer, ByteBuf buf, Character object) {
     buf.writeChar(object);
   }
+
+  @Override
+  public boolean isSupport(Serdes serdes, Class<?> clazz) {
+    return char.class == clazz || Character.class == clazz;
+  }
 }

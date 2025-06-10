@@ -20,4 +20,9 @@ public class BooleanSerializer implements Serializer<Boolean> {
   public void writeObject(Serdes serializer, ByteBuf buf, Boolean object) {
     buf.writeBoolean(object);
   }
+
+  @Override
+  public boolean isSupport(Serdes serdes, Class<?> clazz) {
+    return boolean.class == clazz || Boolean.class == clazz;
+  }
 }

@@ -126,6 +126,10 @@ public final class Serdes {
     return type2Serders.get(cls);
   }
 
+  public SerializerPair getSerializerPair(int typeId) {
+    return id2Serders.get(typeId);
+  }
+
   /**
    * 根据类型ID获取类型
    *
@@ -145,6 +149,10 @@ public final class Serdes {
     writeVarInt32(buf, NULL_ID);
   }
 
+  public void writeInt32(ByteBuf buf, int value) {
+    buf.writeInt(value);
+  }
+
   /**
    * {@link NettyByteBufUtil#writeVarInt32(ByteBuf, int)}
    *
@@ -152,6 +160,10 @@ public final class Serdes {
    */
   public void writeVarInt32(ByteBuf buf, int value) {
     NettyByteBufUtil.writeVarInt32(buf, value);
+  }
+
+  public int readInt32(ByteBuf buf) {
+    return buf.readInt();
   }
 
   /**
@@ -163,6 +175,12 @@ public final class Serdes {
     return NettyByteBufUtil.readVarInt32(buf);
   }
 
+
+  public void writeInt64(ByteBuf buf, long value) {
+    buf.writeLong(value);
+  }
+
+
   /**
    * {@link NettyByteBufUtil#writeVarInt64(ByteBuf, long)} (ByteBuf, int)}
    *
@@ -170,6 +188,10 @@ public final class Serdes {
    */
   public void writeVarInt64(ByteBuf buf, long value) {
     NettyByteBufUtil.writeVarInt64(buf, value);
+  }
+
+  public long readInt64(ByteBuf buf) {
+    return buf.readLong();
   }
 
   /**
@@ -194,12 +216,12 @@ public final class Serdes {
         return null;
       }
 
-      Serializer<?> clazz = getSeriailizer(typeId);
+      SerializerPair clazz = getSerializerPair(typeId);
       if (clazz == null) {
         throw new NullPointerException("类型ID:" + typeId + "，未注册");
       }
 
-      return clazz.readObject(this, buf);
+      return clazz.serializer.readObject(this, buf);
     } catch (Exception e) {
       buf.readerIndex(readerIndex);
       throw new RuntimeException(e);
@@ -234,13 +256,19 @@ public final class Serdes {
     }
   }
 
-  private SerializerPair trySerachAndBindSerializer(Class<?> clazz) {
-    SerializerPair pair = id2Serders.values().stream()
-        .filter(s -> s.serializer.isSupport(this, clazz))
-        .min(Comparator.comparingInt(a -> a.typeId))
-        .orElse(null);
+  public SerializerPair trySerachAndBindSerializer(Class<?> clazz) {
+    SerializerPair pair = type2Serders.get(clazz);
     if (pair != null) {
-      type2Serders.put(clazz, pair);
+      return pair;
+    }
+
+    SerializerPair res = id2Serders.values().stream()
+        .filter(id2Serde -> id2Serde.serializer.isSupport(this, clazz))
+        .min(Comparator.comparingInt(SerializerPair::typeId))
+        .orElse(null);
+
+    if (res != null) {
+      type2Serders.put(clazz, pair = res);
     }
     return pair;
   }

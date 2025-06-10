@@ -8,7 +8,7 @@ import org.example.serde.Serdes.SerializerPair;
 import org.example.serde.Serializer;
 
 /**
- * JAVA数组序列化 //TODO 参考下Kyro，团队处理更加出彩啊！！！！！！！！！！！！！！
+ * JAVA数组序列化
  *
  *
  * <pre>
@@ -32,13 +32,10 @@ import org.example.serde.Serializer;
  *
  * @since 2021年07月18日 14:17:04
  **/
-public class ArraySerializer implements Serializer<Object> {
+public class OneDimensionArraySerializer implements Serializer<Object> {
 
-  /** 数据类型 */
-  private final Class<?> componentType;
 
-  public ArraySerializer(Class<?> componentType) {
-    this.componentType = componentType;
+  public OneDimensionArraySerializer() {
   }
 
 
@@ -50,20 +47,27 @@ public class ArraySerializer implements Serializer<Object> {
       return null;
     }
 
-    Object array = Array.newInstance(componentType, length);
+    Class<?> componentType;
     Serializer<Object> ser = null;
-    if (Modifier.isFinal(componentType.getModifiers())) {
-      SerializerPair pair = serializer.trySerachAndBindSerializer(componentType);
+    int typeId = serializer.readVarInt32(buf);
+    if (serializer.isNullId(typeId)) {
+      componentType = Object.class;
+    } else {
+      SerializerPair pair = serializer.getSerializerPair(typeId);
       if (pair == null) {
-        throw new UnsupportedOperationException("类型:" + componentType + ",未注册");
+        throw new UnsupportedOperationException("类型ID:" + typeId + ",未注册");
       }
-      ser = (Serializer<Object>) pair.serializer();
+
+      componentType = pair.clz();
+      if (Modifier.isFinal(componentType.getModifiers())) {
+        ser = (Serializer<Object>) pair.serializer();
+      }
     }
 
+    Object array = Array.newInstance(componentType, length);
     if (ser != null) {
       for (int i = 0; i < length; ++i) {
-        Object object = ser.readObject(serializer, buf);
-        Array.set(array, i, object);
+        Array.set(array, i, ser.readObject(serializer, buf));
       }
     } else {
       for (int i = 0; i < length; ++i) {
@@ -78,19 +82,23 @@ public class ArraySerializer implements Serializer<Object> {
   @Override
   @SuppressWarnings("unchecked")
   public void writeObject(Serdes serializer, ByteBuf buf, Object object) {
-    if (!object.getClass().isArray()) {
-      throw new RuntimeException("类型:" + object.getClass() + ",不是数组");
-    }
     final int length = Array.getLength(object);
     serializer.writeVarInt32(buf, length);
 
+    Class<?> componentType = object.getClass().getComponentType();
     Serializer<Object> ser = null;
-    if (Modifier.isFinal(componentType.getModifiers())) {
+    if (componentType == Object.class) {
+      serializer.writeNull(buf);
+    } else {
       SerializerPair pair = serializer.trySerachAndBindSerializer(componentType);
       if (pair == null) {
         throw new UnsupportedOperationException("类型:" + componentType + ",未注册");
       }
-      ser = (Serializer<Object>) pair.serializer();
+
+      serializer.writeVarInt32(buf, pair.typeId());
+      if (Modifier.isFinal(componentType.getModifiers())) {
+        ser = (Serializer<Object>) pair.serializer();
+      }
     }
 
     if (ser != null) {
@@ -102,6 +110,10 @@ public class ArraySerializer implements Serializer<Object> {
         serializer.writeObject(buf, Array.get(object, i));
       }
     }
+  }
 
+  @Override
+  public boolean isSupport(Serdes serdes, Class<?> clazz) {
+    return clazz != null && clazz.isArray() && !clazz.getComponentType().isArray();
   }
 }

@@ -27,11 +27,9 @@ public class ArraySerializerTest {
     serializer.registerObject(String[][].class);
     serializer.registerObject(String[][][].class);
     serializer.registerObject(String[][][][].class);
-    serializer.registerObject(ArrayWrapper[].class);
     serializer.registerObject(ArrayWrapper[][].class);
     serializer.registerObject(ArrayWrapper[][][].class);
     serializer.registerObject(ArrayWrapper[][][][].class);
-    serializer.registerObject(Object[].class);
     buf = Unpooled.buffer();
   }
 
@@ -46,14 +44,27 @@ public class ArraySerializerTest {
 
   @Test
   public void simpleArrayTest() {
-    int[] test = new int[1000];
-    for (int i = 0; i < test.length; i++) {
-      test[i] = ThreadLocalRandom.current().nextInt();
-    }
-    serializer.writeObject(buf, test);
+    {
+      int[] test = new int[1000];
+      for (int i = 0; i < test.length; i++) {
+        test[i] = ThreadLocalRandom.current().nextInt();
+      }
+      serializer.writeObject(buf, test);
 
-    int[] res = serializer.readObject(buf);
-    assertArrayEquals(test, res);
+      int[] res = serializer.readObject(buf);
+      assertArrayEquals(test, res);
+    }
+
+    {
+      Integer[] test = new Integer[1000];
+      for (int i = 0; i < test.length; i++) {
+        test[i] = ThreadLocalRandom.current().nextInt();
+      }
+      serializer.writeObject(buf, test);
+
+      Integer[] res = serializer.readObject(buf);
+      assertArrayEquals(test, res);
+    }
   }
 
   @Test

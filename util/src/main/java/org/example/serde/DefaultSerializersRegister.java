@@ -7,6 +7,7 @@ import org.example.serde.array.DoubleArraySerializer;
 import org.example.serde.array.FloatArraySerializer;
 import org.example.serde.array.IntArraySerializer;
 import org.example.serde.array.LongArraySerializer;
+import org.example.serde.array.OneDimensionArraySerializer;
 import org.example.serde.array.ShortArraySerializer;
 import org.example.serde.array.StringArraySerializer;
 
@@ -38,6 +39,7 @@ public class DefaultSerializersRegister {
     serdes.registerSerializer(18, int[].class, new IntArraySerializer());
     serdes.registerSerializer(19, long[].class, new LongArraySerializer());
     serdes.registerSerializer(20, String[].class, new StringArraySerializer());
+    serdes.registerSerializer(21, Object[].class, new OneDimensionArraySerializer());
   }
 
 }

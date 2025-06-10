@@ -4,7 +4,6 @@ import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.IntFunction;
 
 
@@ -25,7 +24,7 @@ import java.util.function.IntFunction;
  *
  * @since 2021年07月18日 14:17:04
  **/
-public class CollectionSerializer implements Serializer<Object> {
+public class CollectionSerializer implements Serializer<Collection<Object>> {
 
   private final Class<?> type;
 
@@ -52,50 +51,24 @@ public class CollectionSerializer implements Serializer<Object> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public Object readObject(Serdes serializer, ByteBuf buf) {
+  public Collection<Object> readObject(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
     if (length < 0) {
       return null;
     }
 
-    int typeId = serializer.readVarInt32(buf);
-
     Collection<Object> collection = factory.apply(length);
-
-    if (typeId != 0) {
-      Serializer<Object> ser = null;
-      ser = (Serializer<Object>) Objects.requireNonNull(serializer.getSeriailizer(typeId),
-          () -> "未注册的类型ID:%s".formatted(typeId));
-
-      for (int i = 0; i < length; i++) {
-        collection.add(ser.readObject(serializer, buf));
-      }
-    } else {
-      for (int i = 0; i < length; i++) {
-        collection.add(serializer.readObject(buf));
-      }
+    for (int i = 0; i < length; i++) {
+      collection.add(serializer.readObject(buf));
     }
-
     return collection;
   }
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, Object object) {
-    if (object == null) {
-      serializer.writeVarInt32(buf, -1);
-    } else {
-      if (!(object instanceof Collection)) {
-        throw new RuntimeException("类型:" + object.getClass() + ",不是集合");
-      }
-      @SuppressWarnings("unchecked") Collection<Object> collection = (Collection<Object>) object;
-
-      serializer.writeVarInt32(buf, collection.size());
-      serializer.writeVarInt32(buf, 0);
-
-      for (Object o : collection) {
-        serializer.writeObject(buf, o);
-      }
+  public void writeObject(Serdes serializer, ByteBuf buf, Collection<Object> collection) {
+    serializer.writeVarInt32(buf, collection.size());
+    for (Object o : collection) {
+      serializer.writeObject(buf, o);
     }
   }
 

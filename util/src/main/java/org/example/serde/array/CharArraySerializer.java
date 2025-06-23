@@ -34,9 +34,6 @@ public class CharArraySerializer implements Serializer<char[]> {
   @Override
   public char[] readObject(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
-    if (length < 0) {
-      return null;
-    }
     char[] array = new char[length];
     for (int i = 0; i < length; i++) {
       array[i] = buf.readChar();

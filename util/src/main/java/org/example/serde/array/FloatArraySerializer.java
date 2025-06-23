@@ -35,10 +35,6 @@ public class FloatArraySerializer implements Serializer<float[]> {
   @Override
   public float[] readObject(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
-    if (length < 0) {
-      return null;
-    }
-
     float[] array = new float[length];
     for (int i = 0; i < length; i++) {
       array[i] = buf.readFloat();

@@ -31,8 +31,9 @@ public class AvatarIdService implements ArgExecSupplier<AvatarId> {
   }
 
   @LocalReq
-  public void set(AvatarId id) {
+  public boolean set(AvatarId id) {
     this.id = id;
+    return true;
   }
 
   @LocalReq

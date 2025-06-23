@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 public class ArraySerializerTest {
@@ -23,17 +24,11 @@ public class ArraySerializerTest {
     new DefaultSerializersRegister().register(write);
 
     write.registerObject(ArrayWrapper.class);
-    write.registerObject(int[][].class);
-    write.registerObject(double[][].class);
-    write.registerObject(double[][][].class);
 
     read = new Serdes();
     new DefaultSerializersRegister().register(read);
 
     read.registerObject(ArrayWrapper.class);
-    read.registerObject(int[][].class);
-    read.registerObject(double[][].class);
-    read.registerObject(double[][][].class);
     buf = Unpooled.buffer();
   }
 
@@ -107,7 +102,7 @@ public class ArraySerializerTest {
     assertArrayEquals(test, res);
   }
 
-  @Test
+  @RepeatedTest(100)
   public void fourDimensionObjectArrayTest() {
     Random random = ThreadLocalRandom.current();
     int one = 5, two = 2, three = 3, four = 4;

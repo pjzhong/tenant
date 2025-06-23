@@ -41,10 +41,6 @@ public class OneDimensionArraySerializer implements Serializer<Object> {
   @Override
   public Object readObject(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
-    if (length < 0) {
-      return null;
-    }
-
     Class<?> componentType;
     int typeId = serializer.readVarInt32(buf);
     if (serializer.isNullId(typeId)) {

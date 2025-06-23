@@ -28,8 +28,7 @@ public class AvatarIdFacadeLocalTest {
   @RepeatedTest(10)
   public void set() throws Exception {
     AvatarId id = new AvatarId(ThreadLocalRandom.current().nextInt());
-    invoker.set(id);
-    TimeUnit.MILLISECONDS.sleep(10);
+    Assertions.assertTrue(invoker.set(id).get());
     Assertions.assertEquals(id, facade.id);
   }
 

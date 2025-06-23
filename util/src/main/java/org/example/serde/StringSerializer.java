@@ -18,21 +18,17 @@ public class StringSerializer implements Serializer<String> {
 
   @Override
   public String readObject(Serdes serializer, ByteBuf buf) {
-    int length = serializer.readVarInt32(buf);
-    if (length < 0) {
-      return null;
-    }
+    int length = serializer.readInt32(buf);
     return buf.readCharSequence(length, StandardCharsets.UTF_8).toString();
   }
 
   @Override
   public void writeObject(Serdes serializer, ByteBuf buf, String object) {
-    if (object == null) {
-      serializer.writeVarInt32(buf, -1);
-    } else {
-      byte[] bytes = object.getBytes(StandardCharsets.UTF_8);
-      serializer.writeVarInt32(buf, bytes.length);
-      buf.writeBytes(bytes);
-    }
+    int strLenIdx = buf.writerIndex();
+    serializer.writeInt32(buf, 0);
+
+    int strStart = buf.writerIndex();
+    buf.writeCharSequence(object, StandardCharsets.UTF_8);
+    buf.setInt(strLenIdx, buf.writerIndex() - strStart);
   }
 }

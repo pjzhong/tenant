@@ -34,10 +34,6 @@ public class IntArraySerializer implements Serializer<int[]> {
   @Override
   public int[] readObject(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
-    if (length == -1) {
-      return null;
-    }
-
     int[] array = new int[length];
     for (int i = 0; i < length; i++) {
       array[i] = serializer.readVarInt32(buf);

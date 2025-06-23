@@ -34,10 +34,6 @@ public class LongArraySerializer implements Serializer<long[]> {
   @Override
   public long[] readObject(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
-    if (length == -1) {
-      return null;
-    }
-
     long[] array = new long[length];
     for (int i = 0; i < length; i++) {
       array[i] = serializer.readVarInt64(buf);

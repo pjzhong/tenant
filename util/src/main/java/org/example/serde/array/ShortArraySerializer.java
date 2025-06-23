@@ -34,10 +34,6 @@ public class ShortArraySerializer implements Serializer<short[]> {
   @Override
   public short[] readObject(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
-    if (length < 0) {
-      return null;
-    }
-
     short[] array = new short[length];
     for (int i = 0; i < length; i++) {
       array[i] = buf.readShort();

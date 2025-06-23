@@ -34,9 +34,6 @@ public class DoubleArraySerializer implements Serializer<double[]> {
   @Override
   public double[] readObject(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
-    if (length < 0) {
-      return null;
-    }
     double[] array = new double[length];
     for (int i = 0; i < length; i++) {
       array[i] = buf.readDouble();

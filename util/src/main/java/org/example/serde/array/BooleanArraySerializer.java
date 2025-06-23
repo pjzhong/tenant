@@ -34,10 +34,6 @@ public class BooleanArraySerializer implements Serializer<boolean[]> {
   @Override
   public boolean[] readObject(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
-    if (length < 0) {
-      return null;
-    }
-
     boolean[] array = new boolean[length];
     for (int i = 0; i < length; i++) {
       array[i] = buf.readBoolean();

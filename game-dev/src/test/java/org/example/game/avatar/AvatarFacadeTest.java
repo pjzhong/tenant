@@ -26,7 +26,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 @SpringJUnitConfig(GameConfiguration.class)
 public class AvatarFacadeTest {
 
-  private static Channel channel;
+  private static Connection connection;
 
   @BeforeAll
   public static void beforeAll(@Autowired GameServer server,
@@ -40,9 +40,10 @@ public class AvatarFacadeTest {
 
     ServerInfo serverInfo = ServerInfo.serInfo(info.getId(),
         new InetSocketAddress("127.0.0.1", info.getPort()));
-    channel = clientService.connectSync(serverInfo).channel();
-    Assertions.assertTrue(
-        loginServiceInvoker.of(channel.attr(Connection.CONNECTION).get()).login(id).get());
+    Channel channel = clientService.connectSync(serverInfo).channel();
+    connection = channel.attr(Connection.CONNECTION).get();
+    Assertions.assertTrue(loginServiceInvoker.of(connection)
+        .login(id).get());
   }
 
   @BeforeAll
@@ -53,7 +54,7 @@ public class AvatarFacadeTest {
   @RepeatedTest(10)
   public void nothing(@Autowired AvatarFacadeInvoker invoker) throws Exception {
     Assertions.assertTrue(
-        invoker.of(channel.attr(Connection.CONNECTION).get())
+        invoker.of(connection)
             .nothing()
             .get());
   }
@@ -86,8 +87,7 @@ public class AvatarFacadeTest {
     int hashcode = Objects.hash(boolean1, Arrays.hashCode(byte1), short1, char1, int1, long1,
         float1, double1, reqMove, resMove);
 
-    AsyncFuture<Integer> callback = invoker.of(
-            channel.attr(Connection.CONNECTION).get())
+    AsyncFuture<Integer> callback = invoker.of(connection)
         .callback(boolean1, byte1, short1, char1, int1, long1, float1, double1, reqMove, resMove);
 
     Assertions.assertEquals(hashcode, callback.get());

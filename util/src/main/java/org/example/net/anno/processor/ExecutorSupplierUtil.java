@@ -284,7 +284,7 @@ final class ExecutorSupplierUtil {
       if (parameters.isEmpty()) {
         processingEnv.getMessager()
             .printError(
-                "方法参数不能为空，并且类型为：%s, 详细定义请查询：%s".formatted(requiredParams,
+                "缺少参数：%s, 详细定义请查询：%s".formatted(requiredParams,
                     userProviderInter),
                 element);
         continue;

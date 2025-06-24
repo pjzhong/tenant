@@ -202,6 +202,12 @@ public class RpcInvokerProcessor extends AbstractProcessor {
       if (noParam) {
         methodBuilder
             .addStatement("$T $L = $T.EMPTY_BUFFER", BYTE_BUF, BUF_VAR_NAME, Util.UNNPOOLED_UTIL);
+        methodBuilder.addStatement(
+            "remoting.invoke($L, $T.of($L, $L))",
+            CONNECTION_FIELD_NAME,
+            MESSAGE_CLASS_NAME,
+            protoIdVarName,
+            BUF_VAR_NAME);
       } else {
 
         methodBuilder
@@ -254,31 +260,32 @@ public class RpcInvokerProcessor extends AbstractProcessor {
             .addStatement("$T.release($L)", ReferenceCountUtil.class, BUF_VAR_NAME)
             .addStatement("throw t")
             .endControlFlow()
-            .addCode("\n")
-        ;
+            .addCode("\n");
+
+        if (callback) {
+          methodBuilder
+              .returns(ParameterizedTypeName.get(Util.NET_COMPLETE_ABLE_FUTURE_CLASS_NAME,
+                  TypeName.get(typeMirror).box()))
+              .addStatement(
+                  "return remoting.invoke($L, $L, $T.of($L, $L), $L)",
+                  MANAGER_VAR_NAME,
+                  CONNECTION_FIELD_NAME,
+                  MESSAGE_CLASS_NAME,
+                  protoIdVarName,
+                  BUF_VAR_NAME,
+                  MSG_ID_VAR_NAME);
+
+        } else {
+          methodBuilder.addStatement(
+              "remoting.invoke($L, $T.of($L, $L))",
+              CONNECTION_FIELD_NAME,
+              MESSAGE_CLASS_NAME,
+              protoIdVarName,
+              BUF_VAR_NAME);
+        }
       }
 
-      if (callback) {
-        methodBuilder
-            .returns(ParameterizedTypeName.get(Util.NET_COMPLETE_ABLE_FUTURE_CLASS_NAME,
-                TypeName.get(typeMirror).box()))
-            .addStatement(
-                "return remoting.invoke($L, $L, $T.of($L, $L), $L)",
-                MANAGER_VAR_NAME,
-                CONNECTION_FIELD_NAME,
-                MESSAGE_CLASS_NAME,
-                protoIdVarName,
-                BUF_VAR_NAME,
-                MSG_ID_VAR_NAME);
 
-      } else {
-        methodBuilder.addStatement(
-            "remoting.invoke($L, $T.of($L, $L))",
-            CONNECTION_FIELD_NAME,
-            MESSAGE_CLASS_NAME,
-            protoIdVarName,
-            BUF_VAR_NAME);
-      }
 
       typeBuilder.addMethod(methodBuilder.build());
     }

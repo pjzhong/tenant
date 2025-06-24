@@ -9,7 +9,7 @@ import org.example.common.model.ResMove;
 import org.example.exec.VirutalExecutors;
 import org.example.net.anno.LocalReq;
 import org.example.net.anno.Rpc;
-import org.example.net.handler.ArgExecSupplier;
+import org.example.net.handler.SysArgExecSupplier;
 
 /**
  * 游戏门面(文档生产插件测试)
@@ -18,7 +18,7 @@ import org.example.net.handler.ArgExecSupplier;
  * @since 2021年09月27日 15:54:54
  **/
 @Rpc
-public class AvatarIdService implements ArgExecSupplier<AvatarId> {
+public class AvatarIdService implements SysArgExecSupplier<VirutalExecutors, AvatarId> {
 
   public AvatarId id;
 
@@ -45,8 +45,8 @@ public class AvatarIdService implements ArgExecSupplier<AvatarId> {
   }
 
   @Override
-  public Executor get(AvatarId avatarId) {
-    return VirutalExecutors.commonPool().getExecutor(avatarId);
+  public Executor get(VirutalExecutors executors, AvatarId avatarId) {
+    return executors.getExecutor(avatarId);
   }
 }
 

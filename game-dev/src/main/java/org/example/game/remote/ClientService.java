@@ -22,9 +22,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RemoteService {
+public class ClientService {
 
-  private static final Logger logger = LoggerFactory.getLogger(RemoteService.class);
+  private static final Logger logger = LoggerFactory.getLogger(ClientService.class);
 
   private GameInfo config;
 
@@ -33,7 +33,7 @@ public class RemoteService {
   private ConnectionManager connectionManager;
   private RegisterServiceInvoker registerFacadeInvoker;
 
-  public RemoteService(GameInfo config, ThreadCommonResource threadCommonResource,
+  public ClientService(GameInfo config, ThreadCommonResource threadCommonResource,
       ClientInitHandler channelInitializer, ConnectionManager connectionManager,
       RegisterServiceInvoker registerFacadeInvoker) {
     this.config = config;
@@ -43,7 +43,7 @@ public class RemoteService {
     this.registerFacadeInvoker = registerFacadeInvoker;
   }
 
-  public void serverStart() {
+  public void testStart() {
     ServerInfo info = serInfo(worldId("world"), new InetSocketAddress("localhost", 8082));
     try {
       ChannelFuture future = connectSync(info);
@@ -54,7 +54,7 @@ public class RemoteService {
       }
     } catch (Exception e) {
       logger.error("", e);
-      VirutalExecutors.commonPool().schedule(this::serverStart, Duration.ofSeconds(3));
+      VirutalExecutors.commonPool().schedule(this::testStart, Duration.ofSeconds(3));
     }
 
   }

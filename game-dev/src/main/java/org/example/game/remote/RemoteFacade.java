@@ -7,15 +7,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class RemoteFacade {
 
-  private RemoteService remoteService;
+  private ClientService clientService;
 
-  public RemoteFacade(RemoteService remoteService) {
-    this.remoteService = remoteService;
+  public RemoteFacade(ClientService clientService) {
+    this.clientService = clientService;
   }
 
   @EventListener
   public void serverStart(ServerStartEvent event) throws Exception {
-    remoteService.serverStart();
+    clientService.testStart();
   }
 
 }

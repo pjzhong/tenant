@@ -1,11 +1,13 @@
-package org.example.net.handler;
+package org.example.common.handler;
 
 import java.util.concurrent.Executor;
 import org.example.exec.VirutalExecutors;
+import org.example.net.handler.ArgExecSupplier;
 import org.example.util.Identity;
 
 /**
- * 根据首个参数，获取执行器。实现了此接口，所有被{@link org.example.net.anno.Req}标记的方法首个参数的类型必须相同
+ * 根据{@code T}参数计算运行环境(线程)。
+ * 实现了此接口，所有被{@link org.example.net.anno.Req}标记的方法首个参数的类型必须相同
  *
  * @author zhongjianping
  * @since 2024/12/4 15:51

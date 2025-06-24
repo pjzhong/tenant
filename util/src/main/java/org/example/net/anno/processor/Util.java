@@ -1,4 +1,4 @@
-package org.example.net;
+package org.example.net.anno.processor;
 
 import com.palantir.javapoet.ClassName;
 import com.palantir.javapoet.FieldSpec;
@@ -6,7 +6,6 @@ import com.palantir.javapoet.TypeName;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -14,19 +13,27 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
+import org.example.net.AsyncFuture;
 import org.example.net.anno.Req;
 import org.example.net.handler.ArgExecSupplier;
 import org.example.net.handler.ExecSupplier;
 import org.example.net.handler.RawExecSupplier;
+import org.example.net.handler.SysArgExecSupplier;
+import org.example.net.handler.SysArgsExecSupplier;
 import org.example.serde.Serdes;
 import org.example.util.NettyByteBufUtil;
-public final class Util {
+
+final class Util {
 
   /** 常用类型 */
 
   public static final TypeName EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(ExecSupplier.class);
-  public static final TypeName FIRST_ARG_EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(
+  public static final TypeName ARG_EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(
       ArgExecSupplier.class);
+  public static final TypeName SYS_ARG_EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(
+      SysArgExecSupplier.class);
+  public static final TypeName SYS_ARGS_EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(
+      SysArgsExecSupplier.class);
   public static final TypeName RAW_EXECUTOR_SUPPLIER_CLASS_NAME = TypeName.get(
       RawExecSupplier.class);
   public static final ClassName CONNECTION_CLASS_NAME = ClassName.get("org.example.net",
@@ -49,10 +56,6 @@ public final class Util {
   public static final ClassName MESSAGE_CLASS_NAME = ClassName.get("org.example.net", "Message");
   public static final ClassName LOGGER = ClassName.get("org.slf4j", "Logger");
   public static final ClassName LOGGER_FACTOR = ClassName.get("org.slf4j", "LoggerFactory");
-  public static final ClassName HANDLER_INTERFACE = ClassName.get("org.example.net.handler",
-      "Handler");
-
-  public static final ClassName OBJECT = ClassName.get(Objects.class);
 
   public static final ClassName NET_COMPLETE_ABLE_FUTURE_CLASS_NAME = ClassName.get(
       AsyncFuture.class);

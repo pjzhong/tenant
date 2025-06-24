@@ -16,7 +16,7 @@ import org.example.common.model.ResMove;
 import org.example.common.model.ServerInfo;
 import org.example.common.net.generated.invoker.ExampleFacadeInvoker;
 import org.example.game.config.GameConfiguration;
-import org.example.game.remote.RemoteService;
+import org.example.game.remote.ClientService;
 import org.example.game.server.GameInfo;
 import org.example.game.server.GameServer;
 import org.example.net.AsyncFuture;
@@ -33,7 +33,7 @@ public class ExampleFacdeTest {
   private static GameId rndGameId;
 
   @BeforeAll
-  public static void beforeAll(@Autowired GameServer server, @Autowired RemoteService service,
+  public static void beforeAll(@Autowired GameServer server, @Autowired ClientService service,
       @Autowired GameInfo info) throws Exception {
     server.startTest();
 

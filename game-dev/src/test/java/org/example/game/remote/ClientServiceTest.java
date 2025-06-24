@@ -18,7 +18,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 @SpringJUnitConfig(GameConfiguration.class)
-public class RemoteServiceTest {
+public class ClientServiceTest {
 
   /** 临时构建的远程服务区环境 */
   private static AnnotationConfigApplicationContext remote;
@@ -30,7 +30,7 @@ public class RemoteServiceTest {
     remote.register(WorldConfiguration.class);
     remote.refresh();
     remote.start();
-    RemoteServiceTest.remote = remote;
+    ClientServiceTest.remote = remote;
   }
 
   @AfterAll
@@ -41,21 +41,21 @@ public class RemoteServiceTest {
   }
 
   @Test
-  public void register(@Autowired RemoteService remoteService)
+  public void register(@Autowired ClientService clientService)
       throws Exception {
     WorldInfo worldInfo = remote.getBean(WorldInfo.class);
 
     ServerInfo serverInfo = ServerInfo.serInfo(worldInfo.getId(),
         new InetSocketAddress("127.0.0.1", worldInfo.getPort()));
-    ChannelFuture future = remoteService.connectSync(serverInfo);
+    ChannelFuture future = clientService.connectSync(serverInfo);
     Assertions.assertTrue(future.isSuccess());
 
     GameId rndId = new GameId(String.valueOf(ThreadLocalRandom.current().nextInt()));
 
     Assertions.assertTrue(
-        remoteService.registerChannelSync(rndId, serverInfo, future.channel()));
+        clientService.registerChannelSync(rndId, serverInfo, future.channel()));
     Assertions.assertFalse(
-        remoteService.registerChannelSync(rndId, serverInfo, future.channel()));
+        clientService.registerChannelSync(rndId, serverInfo, future.channel()));
   }
 
 

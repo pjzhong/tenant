@@ -2,6 +2,7 @@ package org.example.game.avatar;
 
 import java.util.Arrays;
 import java.util.Objects;
+import org.example.common.handler.IdExecSupplier;
 import org.example.common.model.AvatarId;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
@@ -9,7 +10,6 @@ import org.example.common.net.generated.invoker.AvatarIdFacadeInvoker;
 import org.example.net.Connection;
 import org.example.net.anno.Req;
 import org.example.net.anno.Rpc;
-import org.example.net.handler.IdExecSupplier;
 
 /**
  * 游戏门面(文档生产插件测试)

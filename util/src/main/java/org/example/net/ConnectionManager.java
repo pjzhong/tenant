@@ -53,6 +53,7 @@ public class ConnectionManager implements AutoCloseable {
     return connection;
   }
 
+
   public void removeConnection(Identity identity) {
     connections.remove(identity);
   }

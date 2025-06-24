@@ -5,7 +5,6 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
-import org.example.common.net.generated.invoker.ExampleFacadeInvoker;
 import org.example.exec.VirutalExecutors;
 import org.example.net.anno.Req;
 import org.example.net.anno.Rpc;
@@ -22,10 +21,8 @@ public class ExampleFacade implements ExecSupplier {
 
   private static final ExampleIdentity IDENTITY = new ExampleIdentity();
 
-  private final ExampleFacadeInvoker facadeInvoker;
+  public ExampleFacade() {
 
-  public ExampleFacade(ExampleFacadeInvoker facadeInvoker) {
-    this.facadeInvoker = facadeInvoker;
   }
 
   @Req

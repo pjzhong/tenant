@@ -25,20 +25,9 @@ public class AvatarFacade implements AvatarConnectionExecutor {
     this.facadeInvoker = facadeInvoker;
   }
 
-
-  /**
-   * 回声
-   *
-   * @author ZJP
-   * @since 2021年09月27日 16:01:08
-   **/
   @Req
-  public void echo(Connection connection, String str) {
-    facadeInvoker.of(connection).echo(str);
-  }
-
-  @Req
-  public void nothing(Connection ignore) {
+  public boolean nothing(Connection ignore) {
+    return true;
   }
 
 

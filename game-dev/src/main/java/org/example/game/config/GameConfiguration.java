@@ -50,9 +50,8 @@ public class GameConfiguration {
 
   @Bean
   public VirutalExecutors virtualThreadExecutor() {
-    return new VirutalExecutors();
+    return VirutalExecutors.commonPool();
   }
-
 
   @Bean
   public DefaultDispatcher defaultDispatcher(List<HandlerRegister> handlers, Serdes s,

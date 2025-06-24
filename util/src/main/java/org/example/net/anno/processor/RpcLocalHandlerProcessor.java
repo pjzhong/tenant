@@ -1,6 +1,6 @@
 package org.example.net.anno.processor;
 
-import static org.example.net.Util.FACADE_VAR_NAME;
+import static org.example.net.anno.processor.Util.FACADE_VAR_NAME;
 
 import com.google.auto.service.AutoService;
 import com.palantir.javapoet.ClassName;
@@ -33,7 +33,6 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
-import org.example.net.Util;
 import org.example.net.anno.LocalReq;
 
 /**
@@ -46,7 +45,7 @@ import org.example.net.anno.LocalReq;
 @SupportedAnnotationTypes("org.example.net.anno.Rpc")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @AutoService(Processor.class)
-public class LocalRpcProcessor extends AbstractProcessor {
+public class RpcLocalHandlerProcessor extends AbstractProcessor {
 
   private static final String LOCAL_SUBFIX = "Local";
   private static final String RUNNABLE_VAR_NAME = "r";
@@ -193,7 +192,7 @@ public class LocalRpcProcessor extends AbstractProcessor {
     );
 
     info.builder.addMethod(
-        MethodSpec.constructorBuilder()
+        info.constructor
             .addParameter(typeName, FACADE_VAR_NAME)
             .addStatement("this.$L = $L", FACADE_VAR_NAME, FACADE_VAR_NAME)
             .build()

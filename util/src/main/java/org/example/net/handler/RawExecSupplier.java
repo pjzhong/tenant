@@ -1,7 +1,7 @@
 package org.example.net.handler;
 
 /**
- * 无需进行线程分发
+ * 无任何执行环境
  *
  * @author zhongjianping
  * @since 2024/12/4 14:37

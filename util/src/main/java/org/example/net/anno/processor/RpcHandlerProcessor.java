@@ -1,11 +1,11 @@
 package org.example.net.anno.processor;
 
-import static org.example.net.Util.BYTE_BUF;
-import static org.example.net.Util.CONNECTION_CLASS_NAME;
-import static org.example.net.Util.FACADE_VAR_NAME;
-import static org.example.net.Util.MESSAGE_CLASS_NAME;
-import static org.example.net.Util.MSG_ID_VAR_NAME;
-import static org.example.net.Util.SERIALIZER_VAR_NAME;
+import static org.example.net.anno.processor.Util.BYTE_BUF;
+import static org.example.net.anno.processor.Util.CONNECTION_CLASS_NAME;
+import static org.example.net.anno.processor.Util.FACADE_VAR_NAME;
+import static org.example.net.anno.processor.Util.MESSAGE_CLASS_NAME;
+import static org.example.net.anno.processor.Util.MSG_ID_VAR_NAME;
+import static org.example.net.anno.processor.Util.SERIALIZER_VAR_NAME;
 
 import com.google.auto.service.AutoService;
 import com.palantir.javapoet.CodeBlock;
@@ -47,7 +47,6 @@ import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 import org.example.net.DefaultDispatcher;
 import org.example.net.HandlerRegister;
-import org.example.net.Util;
 import org.example.net.anno.Req;
 
 /**
@@ -147,18 +146,20 @@ public class RpcHandlerProcessor extends AbstractProcessor {
             .builder(facdeTypeName, FACADE_VAR_NAME)
             .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
             .build())
-        .addField(Util.COMMON_SERIALIZER_FIELD_SPEC)
-        .addMethod(MethodSpec.constructorBuilder()
-            .addModifiers(Modifier.PUBLIC)
-            .addParameter(facdeTypeName, FACADE_VAR_NAME)
-            .addParameter(Util.COMMON_SERIALIZER, SERIALIZER_VAR_NAME)
-            .addStatement("this.$L = $L", FACADE_VAR_NAME, FACADE_VAR_NAME)
-            .addStatement("this.$L = $L", SERIALIZER_VAR_NAME, SERIALIZER_VAR_NAME)
-            .build());
+        .addField(Util.COMMON_SERIALIZER_FIELD_SPEC);
 
-    TypeSpecInfo info = buildTypeSpecInfo(facade, typeSpecBuilder, elements);
+    TypeSpecInfo info = new TypeSpecInfo(facade, typeSpecBuilder, elements);
+    ExecutorSupplierUtil.buildExecuotSupplerCode(processingEnv, info);
 
     buildHandlerMethod(info);
+
+    typeSpecBuilder.addMethod(info.constructor
+        .addModifiers(Modifier.PUBLIC)
+        .addParameter(facdeTypeName, FACADE_VAR_NAME)
+        .addParameter(Util.COMMON_SERIALIZER, SERIALIZER_VAR_NAME)
+        .addStatement("this.$L = $L", FACADE_VAR_NAME, FACADE_VAR_NAME)
+        .addStatement("this.$L = $L", SERIALIZER_VAR_NAME, SERIALIZER_VAR_NAME)
+        .build());
 
     JavaFile javaFile = JavaFile.builder(packet, typeSpecBuilder.build())
         .build();
@@ -167,15 +168,6 @@ public class RpcHandlerProcessor extends AbstractProcessor {
     try (PrintWriter writer = new PrintWriter(file.openWriter())) {
       javaFile.writeTo(writer);
     }
-  }
-
-  TypeSpecInfo buildTypeSpecInfo(TypeElement typeElement, TypeSpec.Builder builder,
-      List<ExecutableElement> elements) {
-    TypeSpecInfo info = new TypeSpecInfo(typeElement, builder, elements);
-
-    ExecutorSupplierUtil.buildExecuotSupplerCode(processingEnv, info);
-
-    return info;
   }
 
   void buildHandlerMethod(TypeSpecInfo info) {

@@ -1,16 +1,16 @@
 package org.example.net.anno.processor;
 
-import static org.example.net.Util.BASE_REMOTING;
-import static org.example.net.Util.BYTE_BUF;
-import static org.example.net.Util.COMMON_SERIALIZER;
-import static org.example.net.Util.CONNECTION_CLASS_NAME;
-import static org.example.net.Util.CONNECTION_GETTER;
-import static org.example.net.Util.LOGGER;
-import static org.example.net.Util.LOGGER_FACTOR;
-import static org.example.net.Util.MESSAGE_CLASS_NAME;
-import static org.example.net.Util.MSG_ID_VAR_NAME;
-import static org.example.net.Util.POOLED_UTIL;
-import static org.example.net.Util.SERIALIZER_VAR_NAME;
+import static org.example.net.anno.processor.Util.BASE_REMOTING;
+import static org.example.net.anno.processor.Util.BYTE_BUF;
+import static org.example.net.anno.processor.Util.COMMON_SERIALIZER;
+import static org.example.net.anno.processor.Util.CONNECTION_CLASS_NAME;
+import static org.example.net.anno.processor.Util.CONNECTION_GETTER;
+import static org.example.net.anno.processor.Util.LOGGER;
+import static org.example.net.anno.processor.Util.LOGGER_FACTOR;
+import static org.example.net.anno.processor.Util.MESSAGE_CLASS_NAME;
+import static org.example.net.anno.processor.Util.MSG_ID_VAR_NAME;
+import static org.example.net.anno.processor.Util.POOLED_UTIL;
+import static org.example.net.anno.processor.Util.SERIALIZER_VAR_NAME;
 
 import com.google.auto.service.AutoService;
 import com.palantir.javapoet.ClassName;
@@ -43,7 +43,6 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
-import org.example.net.Util;
 import org.example.net.anno.Req;
 
 /**

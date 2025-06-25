@@ -45,7 +45,7 @@ import org.example.net.anno.LocalReq;
 @SupportedAnnotationTypes("org.example.net.anno.Rpc")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @AutoService(Processor.class)
-public class RpcLocalHandlerProcessor extends AbstractProcessor {
+public class RpcLocalInvokerProcessor extends AbstractProcessor {
 
   private static final String LOCAL_SUBFIX = "Local";
   private static final String RUNNABLE_VAR_NAME = "r";
@@ -140,39 +140,37 @@ public class RpcLocalHandlerProcessor extends AbstractProcessor {
                 buildInvokeCodeBlock(method)
                     .build()
             );
+      } else if (hasReutrn) {
+        ParameterizedTypeName returnType = ParameterizedTypeName
+            .get(
+                Util.NET_COMPLETE_ABLE_FUTURE_CLASS_NAME,
+                returnTypeName.box()
+            );
+
+        ParameterizedTypeName supplierType = ParameterizedTypeName
+            .get(
+                Util.SUPPLIER_CLASS_NAME,
+                returnTypeName.box()
+            );
+
+        methodBuilder
+            .returns(returnType)
+            .addCode("$T $L = () ->", supplierType, RUNNABLE_VAR_NAME)
+            .beginControlFlow("")
+            .addStatement("return $L", buildInvokeCodeBlock(method).build())
+            .endControlFlow("")
+            .addStatement("return $T.supplyAsync($L, $L)",
+                Util.NET_COMPLETE_ABLE_FUTURE_CLASS_NAME,
+                RUNNABLE_VAR_NAME, info.executor.apply(method))
+        ;
+
       } else {
-        if (hasReutrn) {
-          ParameterizedTypeName returnType = ParameterizedTypeName
-              .get(
-                  Util.NET_COMPLETE_ABLE_FUTURE_CLASS_NAME,
-                  returnTypeName.box()
-              );
-
-          ParameterizedTypeName supplierType = ParameterizedTypeName
-              .get(
-                  Util.SUPPLIER_CLASS_NAME,
-                  returnTypeName.box()
-              );
-
-          methodBuilder
-              .returns(returnType)
-              .addCode("$T $L = () ->", supplierType, RUNNABLE_VAR_NAME)
-              .beginControlFlow("")
-              .addStatement("return $L", buildInvokeCodeBlock(method).build())
-              .endControlFlow("")
-              .addStatement("return $T.supplyAsync($L, $L)",
-                  Util.NET_COMPLETE_ABLE_FUTURE_CLASS_NAME,
-                  RUNNABLE_VAR_NAME, info.executor.apply(method))
-          ;
-
-        } else {
-          methodBuilder
-              .addCode("$T $L = () ->", Runnable.class, RUNNABLE_VAR_NAME)
-              .beginControlFlow("")
-              .addStatement(buildInvokeCodeBlock(method).build())
-              .endControlFlow("")
-              .addStatement("$L.execute($L)", info.executor.apply(method), RUNNABLE_VAR_NAME);
-        }
+        methodBuilder
+            .addCode("$T $L = () ->", Runnable.class, RUNNABLE_VAR_NAME)
+            .beginControlFlow("")
+            .addStatement(buildInvokeCodeBlock(method).build())
+            .endControlFlow("")
+            .addStatement("$L.execute($L)", info.executor.apply(method), RUNNABLE_VAR_NAME);
       }
 
       typeBuilder.addMethod(methodBuilder.build());

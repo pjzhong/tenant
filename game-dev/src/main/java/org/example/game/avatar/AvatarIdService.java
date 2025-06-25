@@ -3,6 +3,7 @@ package org.example.game.avatar;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Semaphore;
 import org.example.common.model.AvatarId;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
@@ -31,9 +32,9 @@ public class AvatarIdService implements SysArgExecSupplier<VirutalExecutors, Ava
   }
 
   @LocalReq
-  public boolean set(AvatarId id) {
+  public void set(AvatarId id, Semaphore semaphore) {
     this.id = id;
-    return true;
+    semaphore.release();
   }
 
   @LocalReq

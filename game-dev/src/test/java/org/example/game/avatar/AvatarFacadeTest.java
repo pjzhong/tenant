@@ -51,12 +51,12 @@ public class AvatarFacadeTest {
     server.close();
   }
 
-  @RepeatedTest(10)
-  public void nothing(@Autowired AvatarFacadeInvoker invoker) throws Exception {
-    Assertions.assertTrue(
-        invoker.of(connection)
-            .nothing()
-            .get());
+  @RepeatedTest(100)
+  public void acquireTest(@Autowired AvatarFacadeInvoker invoker, @Autowired AvatarFacade facade)
+      throws Exception {
+    //seamphore release here
+    invoker.of(connection).release();
+    facade.semaphore.acquire();
   }
 
   @RepeatedTest(10)

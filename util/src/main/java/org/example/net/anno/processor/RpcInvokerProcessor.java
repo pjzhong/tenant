@@ -14,6 +14,8 @@ import static org.example.net.anno.processor.Util.SERIALIZER_VAR_NAME;
 
 import com.google.auto.service.AutoService;
 import com.palantir.javapoet.ClassName;
+import com.palantir.javapoet.CodeBlock;
+import com.palantir.javapoet.CodeBlock.Builder;
 import com.palantir.javapoet.FieldSpec;
 import com.palantir.javapoet.JavaFile;
 import com.palantir.javapoet.MethodSpec;
@@ -181,8 +183,8 @@ public class RpcInvokerProcessor extends AbstractProcessor {
 
     for (ExecutableElement method : methods) {
       Name methodName = method.getSimpleName();
-      TypeMirror typeMirror = method.getReturnType();
-      boolean callback = typeMirror.getKind() != TypeKind.VOID;
+      TypeMirror returnTypeMirror = method.getReturnType();
+      boolean hasReturn = returnTypeMirror.getKind() != TypeKind.VOID;
 
       MethodSpec.Builder methodBuilder = MethodSpec
           .methodBuilder(methodName.toString())
@@ -197,75 +199,36 @@ public class RpcInvokerProcessor extends AbstractProcessor {
 
       methodBuilder
           .addCode("\n");
-      List<? extends VariableElement> pparameters = method.getParameters();
-      boolean noParam = pparameters.isEmpty() && !callback;
-      if (noParam) {
+
+      CodeBlock.Builder paramSerde = buildMethodParamsSerde(method, methodBuilder);
+
+      boolean noReqParams = paramSerde.isEmpty() && !hasReturn;
+      if (noReqParams) {
         methodBuilder
-            .addStatement("$T $L = $T.EMPTY_BUFFER", BYTE_BUF, BUF_VAR_NAME, Util.UNNPOOLED_UTIL);
-        methodBuilder.addStatement(
-            "remoting.invoke($L, $T.of($L, $L))",
-            CONNECTION_FIELD_NAME,
-            MESSAGE_CLASS_NAME,
-            protoIdVarName,
-            BUF_VAR_NAME);
+            .addStatement("$T $L = $T.EMPTY_BUFFER", BYTE_BUF, BUF_VAR_NAME, Util.UNNPOOLED_UTIL)
+            .addStatement(
+                "remoting.invoke($L, $T.of($L, $L))",
+                CONNECTION_FIELD_NAME,
+                MESSAGE_CLASS_NAME,
+                protoIdVarName,
+                BUF_VAR_NAME);
       } else {
 
         methodBuilder
             .addStatement("$T $L = $T.DEFAULT.buffer()", BYTE_BUF, BUF_VAR_NAME, POOLED_UTIL);
-        if (callback) {
-          methodBuilder.addStatement("int $L = $L.nextCallBackMsgId()", MSG_ID_VAR_NAME,
-              MANAGER_VAR_NAME);
-        }
 
         methodBuilder.beginControlFlow("try");
 
-        //Handle param
-        if (callback) {
-          methodBuilder.addStatement("$L.writeVarInt32($L, $L)", SERIALIZER_VAR_NAME, BUF_VAR_NAME,
-              MSG_ID_VAR_NAME);
-        }
-        for (VariableElement variableElement : method.getParameters()) {
-          Name name = variableElement.getSimpleName();
-          TypeMirror paramType = variableElement.asType();
-          TypeName paramTypeName = TypeName.get(paramType);
-
-          // Connection和Message不用生成
-          if (paramTypeName.equals(CONNECTION_CLASS_NAME) || paramTypeName.equals(
-              MESSAGE_CLASS_NAME)) {
-            continue;
-          }
-
-          methodBuilder.addParameter(paramTypeName, name.toString());
-          switch (paramType.getKind()) {
-            case BOOLEAN -> methodBuilder.addStatement("$L.writeBoolean($L)", BUF_VAR_NAME, name);
-            case BYTE -> methodBuilder.addStatement("$L.writeByte($L)", BUF_VAR_NAME, name);
-            case SHORT -> methodBuilder.addStatement("$L.writeShort($L)", BUF_VAR_NAME, name);
-            case CHAR -> methodBuilder.addStatement("$L.writeChar($L)", BUF_VAR_NAME, name);
-            case FLOAT -> methodBuilder.addStatement("$L.writeFloat($L)", BUF_VAR_NAME, name);
-            case DOUBLE -> methodBuilder.addStatement("$L.writeDouble($L)", BUF_VAR_NAME, name);
-            case INT -> methodBuilder.addStatement("$L.writeVarInt32($L, $L)", SERIALIZER_VAR_NAME,
-                BUF_VAR_NAME,
-                name);
-            case LONG -> methodBuilder.addStatement("$L.writeVarInt64($L, $L)", SERIALIZER_VAR_NAME,
-                BUF_VAR_NAME,
-                name);
-            default ->
-                methodBuilder.addStatement("$L.writeObject(buf, $L)", SERIALIZER_VAR_NAME, name);
-          }
-        }
-
-        methodBuilder
-            .endControlFlow()
-            .beginControlFlow("catch(Throwable t)")
-            .addStatement("$T.release($L)", ReferenceCountUtil.class, BUF_VAR_NAME)
-            .addStatement("throw t")
-            .endControlFlow()
-            .addCode("\n");
-
-        if (callback) {
+        if (hasReturn) {
           methodBuilder
-              .returns(ParameterizedTypeName.get(Util.NET_COMPLETE_ABLE_FUTURE_CLASS_NAME,
-                  TypeName.get(typeMirror).box()))
+              .addStatement("int $L = $L.nextCallBackMsgId()", MSG_ID_VAR_NAME,
+                  MANAGER_VAR_NAME)
+              .addStatement("$L.writeVarInt32($L, $L)", SERIALIZER_VAR_NAME, BUF_VAR_NAME,
+                  MSG_ID_VAR_NAME)
+              .addCode(paramSerde.build())
+              .returns(ParameterizedTypeName.get(
+                  Util.NET_COMPLETE_ABLE_FUTURE_CLASS_NAME, TypeName.get(returnTypeMirror).box()
+              ))
               .addStatement(
                   "return remoting.invoke($L, $L, $T.of($L, $L), $L)",
                   MANAGER_VAR_NAME,
@@ -276,21 +239,66 @@ public class RpcInvokerProcessor extends AbstractProcessor {
                   MSG_ID_VAR_NAME);
 
         } else {
-          methodBuilder.addStatement(
-              "remoting.invoke($L, $T.of($L, $L))",
-              CONNECTION_FIELD_NAME,
-              MESSAGE_CLASS_NAME,
-              protoIdVarName,
-              BUF_VAR_NAME);
+          methodBuilder
+              .addCode(paramSerde.build())
+              .addStatement(
+                  "remoting.invoke($L, $T.of($L, $L))",
+                  CONNECTION_FIELD_NAME,
+                  MESSAGE_CLASS_NAME,
+                  protoIdVarName,
+                  BUF_VAR_NAME
+              );
         }
+
+        methodBuilder
+            .endControlFlow()
+            .beginControlFlow("catch(Throwable t)")
+            .addStatement("$T.release($L)", ReferenceCountUtil.class, BUF_VAR_NAME)
+            .addStatement("throw t")
+            .endControlFlow()
+            .addCode("\n");
       }
-
-
 
       typeBuilder.addMethod(methodBuilder.build());
     }
 
     return typeBuilder.build();
+  }
+
+  private static Builder buildMethodParamsSerde(ExecutableElement method,
+      MethodSpec.Builder methodBuilder) {
+    Builder paramSerde = CodeBlock.builder();
+    for (VariableElement variableElement : method.getParameters()) {
+      Name name = variableElement.getSimpleName();
+      TypeMirror paramType = variableElement.asType();
+      TypeName paramTypeName = TypeName.get(paramType);
+
+      // Connection和Message不用生成
+      if (paramTypeName.equals(CONNECTION_CLASS_NAME) ||
+          paramTypeName.equals(MESSAGE_CLASS_NAME)) {
+        continue;
+      }
+
+      methodBuilder.addParameter(paramTypeName, name.toString());
+
+      switch (paramType.getKind()) {
+        case BOOLEAN -> paramSerde.addStatement("$L.writeBoolean($L)", BUF_VAR_NAME, name);
+        case BYTE -> paramSerde.addStatement("$L.writeByte($L)", BUF_VAR_NAME, name);
+        case SHORT -> paramSerde.addStatement("$L.writeShort($L)", BUF_VAR_NAME, name);
+        case CHAR -> paramSerde.addStatement("$L.writeChar($L)", BUF_VAR_NAME, name);
+        case FLOAT -> paramSerde.addStatement("$L.writeFloat($L)", BUF_VAR_NAME, name);
+        case DOUBLE -> paramSerde.addStatement("$L.writeDouble($L)", BUF_VAR_NAME, name);
+        case INT -> paramSerde.addStatement("$L.writeVarInt32($L, $L)", SERIALIZER_VAR_NAME,
+            BUF_VAR_NAME,
+            name);
+        case LONG -> paramSerde.addStatement("$L.writeVarInt64($L, $L)", SERIALIZER_VAR_NAME,
+            BUF_VAR_NAME,
+            name);
+        default -> paramSerde.addStatement("$L.writeObject(buf, $L)", SERIALIZER_VAR_NAME, name);
+      }
+
+    }
+    return paramSerde;
   }
 
 

@@ -6,7 +6,6 @@ import org.example.common.handler.IdExecSupplier;
 import org.example.common.model.AvatarId;
 import org.example.common.model.ReqMove;
 import org.example.common.model.ResMove;
-import org.example.common.net.generated.invoker.AvatarIdFacadeInvoker;
 import org.example.net.Connection;
 import org.example.net.anno.Req;
 import org.example.net.anno.Rpc;
@@ -20,10 +19,8 @@ import org.example.net.anno.Rpc;
 @Rpc
 public class AvatarIdFacade implements IdExecSupplier<AvatarId> {
 
-  private final AvatarIdFacadeInvoker facadeInvoker;
 
-  public AvatarIdFacade(AvatarIdFacadeInvoker facadeInvoker) {
-    this.facadeInvoker = facadeInvoker;
+  public AvatarIdFacade() {
   }
 
 
@@ -34,12 +31,8 @@ public class AvatarIdFacade implements IdExecSupplier<AvatarId> {
    * @since 2021年09月27日 16:01:08
    **/
   @Req
-  public void echo(AvatarId id, String str, Connection connection) {
-    facadeInvoker.of(connection).echo(id, str);
-  }
-
-  @Req
-  public void nothing(AvatarId id) {
+  public int echo(AvatarId id, String str, Connection connection) {
+    return Objects.hash(id, str);
   }
 
   @Req

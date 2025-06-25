@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import org.example.common.model.AvatarId;
@@ -27,8 +28,10 @@ public class AvatarIdFacadeLocalTest {
 
   @RepeatedTest(10)
   public void set() throws Exception {
+    Semaphore semaphore = new Semaphore(0);
     AvatarId id = new AvatarId(ThreadLocalRandom.current().nextInt());
-    Assertions.assertTrue(invoker.set(id).get());
+    invoker.set(id, semaphore);
+    semaphore.acquire();
     Assertions.assertEquals(id, facade.id);
   }
 

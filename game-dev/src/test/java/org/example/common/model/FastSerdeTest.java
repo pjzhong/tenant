@@ -52,10 +52,10 @@ public class FastSerdeTest {
     ByteBuf one = Unpooled.buffer();
     ByteBuf two = Unpooled.buffer();
 
-    codeSerde.writeObject(one, res);
+    codeSerde.serialize(one, res);
     ResMoveSerde.fastSerializer(codeSerde, two, res);
 
-    ResMove move1 = codeSerde.readObject(two);
+    ResMove move1 = codeSerde.deserialize(two);
     ResMove move2 = ResMoveSerde.fastDeserialzier(codeSerde, one);
 
     Assertions.assertEquals(res, move1);
@@ -69,10 +69,10 @@ public class FastSerdeTest {
     ByteBuf one = Unpooled.buffer();
     ByteBuf two = Unpooled.buffer();
 
-    codeSerde.writeObject(one, req);
+    codeSerde.serialize(one, req);
     ReqMoveSerde.fastSerializer(codeSerde, two, req);
 
-    ReqMove move1 = codeSerde.readObject(two);
+    ReqMove move1 = codeSerde.deserialize(two);
     ReqMove move2 = ReqMoveSerde.fastDeserialzier(codeSerde, one);
 
     Assertions.assertEquals(req, move1);
@@ -88,11 +88,11 @@ public class FastSerdeTest {
 
     Compose compose = new Compose(req, res);
     {
-      codeSerde.writeObject(one, compose);
+      codeSerde.serialize(one, compose);
       ComposeSerde.fastSerializer(codeSerde, two, compose);
     }
 
-    Compose resCompose1 = codeSerde.readObject(two);
+    Compose resCompose1 = codeSerde.deserialize(two);
     Compose resCompose2 = ComposeSerde.fastDeserialzier(codeSerde, one);
 
     Assertions.assertEquals(resCompose1, resCompose2);

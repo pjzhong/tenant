@@ -47,7 +47,7 @@ public class MapSerializer<K, V> implements Serializer<Map<K, V>> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public Map<K, V> readObject(Serdes serializer, ByteBuf buf) {
+  public Map<K, V> deserialize(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
     if (length < 0) {
       return null;
@@ -67,16 +67,16 @@ public class MapSerializer<K, V> implements Serializer<Map<K, V>> {
 
       Map<K, V> map = supplier.apply(length);
       for (int i = 0; i < length; i++) {
-        K key = (K) keySer.readObject(serializer, buf);
-        V val = (V) valSer.readObject(serializer, buf);
+        K key = (K) keySer.deserialize(serializer, buf);
+        V val = (V) valSer.deserialize(serializer, buf);
         map.put(key, val);
       }
       return map;
     } else {
       Map<K, V> map = supplier.apply(length);
       for (int i = 0; i < length; i++) {
-        K key = serializer.readObject(buf);
-        V val = serializer.readObject(buf);
+        K key = serializer.deserialize(buf);
+        V val = serializer.deserialize(buf);
         map.put(key, val);
       }
       return map;
@@ -84,7 +84,7 @@ public class MapSerializer<K, V> implements Serializer<Map<K, V>> {
   }
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, Map<K, V> object) {
+  public void serialize(Serdes serializer, ByteBuf buf, Map<K, V> object) {
     if (object == null) {
       serializer.writeVarInt32(buf, -1);
       return;
@@ -98,8 +98,8 @@ public class MapSerializer<K, V> implements Serializer<Map<K, V>> {
     for (Entry<K, V> e : object.entrySet()) {
       Object key = e.getKey();
       Object val = e.getValue();
-      serializer.writeObject(buf, key);
-      serializer.writeObject(buf, val);
+      serializer.serialize(buf, key);
+      serializer.serialize(buf, val);
     }
   }
 

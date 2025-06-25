@@ -50,8 +50,8 @@ public class SetSerializerTest {
       col.add(random.nextInt());
     }
 
-    serializer.writeObject(buf, col);
-    Set<Integer> res = serializer.readObject(buf);
+    serializer.serialize(buf, col);
+    Set<Integer> res = serializer.deserialize(buf);
     assertEquals(col, res);
   }
 
@@ -64,8 +64,8 @@ public class SetSerializerTest {
       col.add(random.nextDouble());
     }
 
-    serializer.writeObject(buf, col);
-    Set<Double> res = serializer.readObject(buf);
+    serializer.serialize(buf, col);
+    Set<Double> res = serializer.deserialize(buf);
     assertEquals(col, res);
   }
 
@@ -78,8 +78,8 @@ public class SetSerializerTest {
       col.add(Integer.toString(random.nextInt()));
     }
 
-    serializer.writeObject(buf, col);
-    Set<String> res = serializer.readObject(buf);
+    serializer.serialize(buf, col);
+    Set<String> res = serializer.deserialize(buf);
     assertEquals(col, res);
   }
 
@@ -97,8 +97,8 @@ public class SetSerializerTest {
       col.add(strs);
     }
 
-    serializer.writeObject(buf, col);
-    Set<Set<String>> res = serializer.readObject(buf);
+    serializer.serialize(buf, col);
+    Set<Set<String>> res = serializer.deserialize(buf);
     assertEquals(col, res);
   }
 

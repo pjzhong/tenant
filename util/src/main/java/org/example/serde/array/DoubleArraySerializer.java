@@ -32,7 +32,7 @@ import org.example.serde.Serializer;
 public class DoubleArraySerializer implements Serializer<double[]> {
 
   @Override
-  public double[] readObject(Serdes serializer, ByteBuf buf) {
+  public double[] deserialize(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
     double[] array = new double[length];
     for (int i = 0; i < length; i++) {
@@ -43,7 +43,7 @@ public class DoubleArraySerializer implements Serializer<double[]> {
 
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, double[] object) {
+  public void serialize(Serdes serializer, ByteBuf buf, double[] object) {
     final int length = object.length;
     serializer.writeVarInt32(buf, length);
     for (double o : object) {

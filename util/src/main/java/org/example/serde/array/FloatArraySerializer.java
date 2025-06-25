@@ -33,7 +33,7 @@ public class FloatArraySerializer implements Serializer<float[]> {
 
 
   @Override
-  public float[] readObject(Serdes serializer, ByteBuf buf) {
+  public float[] deserialize(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
     float[] array = new float[length];
     for (int i = 0; i < length; i++) {
@@ -44,7 +44,7 @@ public class FloatArraySerializer implements Serializer<float[]> {
 
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, float[] object) {
+  public void serialize(Serdes serializer, ByteBuf buf, float[] object) {
     final int length = object.length;
     serializer.writeVarInt32(buf, length);
     for (float o : object) {

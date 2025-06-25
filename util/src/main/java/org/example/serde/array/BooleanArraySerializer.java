@@ -32,7 +32,7 @@ import org.example.serde.Serializer;
 public class BooleanArraySerializer implements Serializer<boolean[]> {
 
   @Override
-  public boolean[] readObject(Serdes serializer, ByteBuf buf) {
+  public boolean[] deserialize(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
     boolean[] array = new boolean[length];
     for (int i = 0; i < length; i++) {
@@ -43,7 +43,7 @@ public class BooleanArraySerializer implements Serializer<boolean[]> {
 
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, boolean[] object) {
+  public void serialize(Serdes serializer, ByteBuf buf, boolean[] object) {
     final int length = object.length;
     serializer.writeVarInt32(buf, length);
     for (boolean o : object) {

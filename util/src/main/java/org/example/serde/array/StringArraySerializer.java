@@ -14,7 +14,7 @@ public class StringArraySerializer implements Serializer<String[]> {
 
 
   @Override
-  public String[] readObject(Serdes serializer, ByteBuf buf) {
+  public String[] deserialize(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
     String[] array = new String[length];
     for (int i = 0; i < length; ++i) {
@@ -29,7 +29,7 @@ public class StringArraySerializer implements Serializer<String[]> {
 
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, String[] object) {
+  public void serialize(Serdes serializer, ByteBuf buf, String[] object) {
     final int length = Array.getLength(object);
     serializer.writeVarInt32(buf, length);
 

@@ -247,7 +247,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
               methodBuilder.addStatement("$T $L = $L", MESSAGE_CLASS_NAME, pname,
                   MESSAGE_VAR_NAME);
             } else {
-              methodBuilder.addStatement("$T $L = $L.readObject($L)", TypeName.get(ptype), pname,
+              methodBuilder.addStatement("$T $L = $L.deserialize($L)", TypeName.get(ptype), pname,
                   SERIALIZER_VAR_NAME, BUF_VAR_NAME);
             }
           }
@@ -321,7 +321,7 @@ public class RpcHandlerProcessor extends AbstractProcessor {
           .addStatement("$T $L = $T.DEFAULT.buffer()", BYTE_BUF, resBuf, Util.POOLED_UTIL)
           .beginControlFlow("try")
           .addStatement("$L.writeVarInt32($L, $L)", SERIALIZER_VAR_NAME, resBuf, MSG_ID_VAR_NAME)
-          .addStatement("$L.writeObject($L, $L)", SERIALIZER_VAR_NAME, resBuf, resVarName)
+          .addStatement("$L.serialize($L, $L)", SERIALIZER_VAR_NAME, resBuf, resVarName)
           .addStatement("$L.channel().writeAndFlush($T.callBack($L))", CONNECTION_VAR_NAME,
               MESSAGE_CLASS_NAME, resBuf)
           .endControlFlow()

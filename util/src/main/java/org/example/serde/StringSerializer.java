@@ -17,13 +17,13 @@ import java.nio.charset.StandardCharsets;
 public class StringSerializer implements Serializer<String> {
 
   @Override
-  public String readObject(Serdes serializer, ByteBuf buf) {
+  public String deserialize(Serdes serializer, ByteBuf buf) {
     int length = serializer.readInt32(buf);
     return buf.readCharSequence(length, StandardCharsets.UTF_8).toString();
   }
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, String object) {
+  public void serialize(Serdes serializer, ByteBuf buf, String object) {
     int strLenIdx = buf.writerIndex();
     serializer.writeInt32(buf, 0);
 

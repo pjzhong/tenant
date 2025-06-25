@@ -43,7 +43,7 @@ public class CallBackFacade implements Handler, HandlerRegister {
       return;
     }
     ByteBuf buf = Unpooled.wrappedBuffer(m.packet());
-    futureVar.complete(serializer.readObject(buf));
+    futureVar.complete(serializer.deserialize(buf));
   }
 
   public int callBackId() {

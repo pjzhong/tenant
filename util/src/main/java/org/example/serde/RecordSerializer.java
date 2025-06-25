@@ -28,14 +28,14 @@ public class RecordSerializer implements Serializer<Object> {
   }
 
   @Override
-  public Object readObject(Serdes serializer, ByteBuf buf) {
+  public Object deserialize(Serdes serializer, ByteBuf buf) {
     Object[] args = null;
     if (0 < fields.length) {
       args = new Object[fields.length];
       for (int i = 0; i < fields.length; i++) {
         FieldInfo field = fields[i];
         try {
-          args[i] = serializer.readObject(buf);
+          args[i] = serializer.deserialize(buf);
         } catch (Throwable e) {
           throw new RuntimeException(
               String.format("反序列化:%s, 字段:%s 错误", clazz, field.name()), e);
@@ -56,11 +56,11 @@ public class RecordSerializer implements Serializer<Object> {
   }
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, Object object) {
+  public void serialize(Serdes serializer, ByteBuf buf, Object object) {
     for (FieldInfo field : fields) {
       try {
         Object value = field.getter().invoke(object);
-        serializer.writeObject(buf, value);
+        serializer.serialize(buf, value);
       } catch (Throwable e) {
         throw new RuntimeException(String.format("序列化:%s, 字段:%s 错误", clazz, field.name()),
             e);

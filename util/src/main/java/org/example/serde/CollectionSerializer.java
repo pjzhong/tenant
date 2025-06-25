@@ -51,7 +51,7 @@ public class CollectionSerializer implements Serializer<Collection<Object>> {
   }
 
   @Override
-  public Collection<Object> readObject(Serdes serializer, ByteBuf buf) {
+  public Collection<Object> deserialize(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
     if (length < 0) {
       return null;
@@ -59,16 +59,16 @@ public class CollectionSerializer implements Serializer<Collection<Object>> {
 
     Collection<Object> collection = factory.apply(length);
     for (int i = 0; i < length; i++) {
-      collection.add(serializer.readObject(buf));
+      collection.add(serializer.deserialize(buf));
     }
     return collection;
   }
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, Collection<Object> collection) {
+  public void serialize(Serdes serializer, ByteBuf buf, Collection<Object> collection) {
     serializer.writeVarInt32(buf, collection.size());
     for (Object o : collection) {
-      serializer.writeObject(buf, o);
+      serializer.serialize(buf, o);
     }
   }
 

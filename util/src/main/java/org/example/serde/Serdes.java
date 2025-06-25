@@ -219,11 +219,11 @@ public final class Serdes {
   }
 
   @SuppressWarnings("unchecked")
-  public <V> V readObject(ByteBuf buf) {
-    return (V) read(buf);
+  public <V> V deserialize(ByteBuf buf) {
+    return (V) deserializeImpl(buf);
   }
 
-  private Object read(ByteBuf buf) {
+  private Object deserializeImpl(ByteBuf buf) {
     int readerIndex = buf.readerIndex();
     try {
       int typeId = readVarInt32(buf);
@@ -236,7 +236,7 @@ public final class Serdes {
         throw new NullPointerException("类型ID:" + typeId + "，未注册");
       }
 
-      return clazz.serializer.readObject(this, buf);
+      return clazz.serializer.deserialize(this, buf);
     } catch (Exception e) {
       buf.readerIndex(readerIndex);
       throw new RuntimeException(e);
@@ -244,7 +244,7 @@ public final class Serdes {
   }
 
   @SuppressWarnings("unchecked")
-  public void writeObject(ByteBuf buf, Object object) {
+  public void serialize(ByteBuf buf, Object object) {
     if (object == null) {
       writeNull(buf);
       return;
@@ -264,7 +264,7 @@ public final class Serdes {
     try {
       Serializer<Object> serializer = (Serializer<Object>) pair.serializer;
       writeVarInt32(buf, pair.typeId);
-      serializer.writeObject(this, buf, object);
+      serializer.serialize(this, buf, object);
     } catch (Exception e) {
       buf.writerIndex(writeIdx);
       throw new RuntimeException("类型:" + clazz + ",序列化错误", e);

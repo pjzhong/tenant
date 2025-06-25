@@ -44,8 +44,8 @@ public class MapSerializerTest {
       col.put(random.nextInt(), random.nextDouble());
     }
 
-    serializer.writeObject(buf, col);
-    Map<Integer, Double> res = serializer.readObject(buf);
+    serializer.serialize(buf, col);
+    Map<Integer, Double> res = serializer.deserialize(buf);
     assertEquals(col, res);
   }
 
@@ -58,8 +58,8 @@ public class MapSerializerTest {
       col.put(Long.toString(random.nextLong()), random.nextDouble());
     }
 
-    serializer.writeObject(buf, col);
-    Map<String, Double> res = serializer.readObject(buf);
+    serializer.serialize(buf, col);
+    Map<String, Double> res = serializer.deserialize(buf);
     assertEquals(col, res);
   }
 
@@ -83,8 +83,8 @@ public class MapSerializerTest {
 
     col.put(old, null);
 
-    serializer.writeObject(buf, col);
-    Map<Integer, Map<String, Double>> res = serializer.readObject(buf);
+    serializer.serialize(buf, col);
+    Map<Integer, Map<String, Double>> res = serializer.deserialize(buf);
     assertEquals(col, res);
   }
 }

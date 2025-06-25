@@ -104,7 +104,7 @@ public class ObjectSerializer implements Serializer<Object> {
   }
 
   @Override
-  public Object readObject(Serdes serializer, ByteBuf buf) {
+  public Object deserialize(Serdes serializer, ByteBuf buf) {
     Object o;
     try {
       o = constructor.invoke();
@@ -114,7 +114,7 @@ public class ObjectSerializer implements Serializer<Object> {
 
     for (FieldInfo field : fields) {
       try {
-        Object value = serializer.readObject(buf);
+        Object value = serializer.deserialize(buf);
         MethodHandle setter = field.setter();
         setter.invoke(o, value);
       } catch (Throwable e) {
@@ -126,11 +126,11 @@ public class ObjectSerializer implements Serializer<Object> {
   }
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, Object object) {
+  public void serialize(Serdes serializer, ByteBuf buf, Object object) {
     for (FieldInfo field : fields) {
       try {
         Object value = field.getter().invoke(object);
-        serializer.writeObject(buf, value);
+        serializer.serialize(buf, value);
       } catch (Throwable e) {
         throw new RuntimeException(String.format("序列化:%s, 字段:%s 错误", clazz, field.name()),
             e);

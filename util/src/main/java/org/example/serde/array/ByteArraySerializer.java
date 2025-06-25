@@ -37,7 +37,7 @@ public class ByteArraySerializer implements Serializer<byte[]> {
 
 
   @Override
-  public byte[] readObject(Serdes serializer, ByteBuf buf) {
+  public byte[] deserialize(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
     byte[] array = new byte[length];
     buf.readBytes(array);
@@ -46,7 +46,7 @@ public class ByteArraySerializer implements Serializer<byte[]> {
 
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, byte[] object) {
+  public void serialize(Serdes serializer, ByteBuf buf, byte[] object) {
     final int length = object.length;
     serializer.writeVarInt32(buf, length);
     buf.writeBytes(object);

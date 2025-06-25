@@ -294,7 +294,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
         case LONG -> paramSerde.addStatement("$L.writeVarInt64($L, $L)", SERIALIZER_VAR_NAME,
             BUF_VAR_NAME,
             name);
-        default -> paramSerde.addStatement("$L.writeObject(buf, $L)", SERIALIZER_VAR_NAME, name);
+        default -> paramSerde.addStatement("$L.serialize(buf, $L)", SERIALIZER_VAR_NAME, name);
       }
 
     }

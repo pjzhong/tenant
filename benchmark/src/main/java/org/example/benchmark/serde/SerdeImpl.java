@@ -50,8 +50,8 @@ public class SerdeImpl {
   @OutputTimeUnit(TimeUnit.SECONDS)
   public void codecSerdeTest(Blackhole bh) {
     buf.clear();
-    codeSerde.writeObject(buf, object);
-    CodecObject object2 = codeSerde.readObject(buf);
+    codeSerde.serialize(buf, object);
+    CodecObject object2 = codeSerde.deserialize(buf);
 
     if (!object2.equals(object)) {
       throw new RuntimeException();

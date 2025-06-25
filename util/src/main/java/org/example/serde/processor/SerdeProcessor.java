@@ -245,7 +245,7 @@ public class SerdeProcessor extends AbstractProcessor {
           BUF_VAR_NAME
       );
     } else {
-      builder.add("$L.readObject($L)",
+      builder.add("$L.deserialize($L)",
           SERIALIZER_VAR_NAME,
           BUF_VAR_NAME
       );
@@ -271,7 +271,7 @@ public class SerdeProcessor extends AbstractProcessor {
           getter
       );
     } else {
-      builder.add("$L.writeObject($L, $L)",
+      builder.add("$L.serialize($L, $L)",
           SERIALIZER_VAR_NAME,
           BUF_VAR_NAME,
           getter
@@ -338,7 +338,7 @@ public class SerdeProcessor extends AbstractProcessor {
       }
       impl.addCode(");");
 
-      MethodSpec.Builder readObject = MethodSpec.methodBuilder("readObject")
+      MethodSpec.Builder deserialize = MethodSpec.methodBuilder("deserialize")
           .addAnnotation(Override.class)
           .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
           .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
@@ -348,7 +348,7 @@ public class SerdeProcessor extends AbstractProcessor {
 
       typeBuilder
           .addMethod(impl.build())
-          .addMethod(readObject.build());
+          .addMethod(deserialize.build());
     }
 
     public static void serializerCode(SerdeProcessor processor, TypeSpec.Builder typeBuilder,
@@ -414,7 +414,7 @@ public class SerdeProcessor extends AbstractProcessor {
         }
       });
 
-      MethodSpec.Builder writeObject = MethodSpec.methodBuilder("writeObject")
+      MethodSpec.Builder serialize = MethodSpec.methodBuilder("serialize")
           .addAnnotation(Override.class)
           .addModifiers(Modifier.PUBLIC)
           .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
@@ -426,7 +426,7 @@ public class SerdeProcessor extends AbstractProcessor {
 
       typeBuilder
           .addMethod(impl.build())
-          .addMethod(writeObject.build());
+          .addMethod(serialize.build());
     }
 
   }
@@ -553,7 +553,7 @@ public class SerdeProcessor extends AbstractProcessor {
 
       impl.addStatement("return object");
 
-      MethodSpec.Builder readObject = MethodSpec.methodBuilder("readObject")
+      MethodSpec.Builder deserialize = MethodSpec.methodBuilder("deserialize")
           .addAnnotation(Override.class)
           .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
           .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
@@ -563,7 +563,7 @@ public class SerdeProcessor extends AbstractProcessor {
 
       typeBuilder
           .addMethod(impl.build())
-          .addMethod(readObject.build());
+          .addMethod(deserialize.build());
     }
 
 
@@ -630,7 +630,7 @@ public class SerdeProcessor extends AbstractProcessor {
         }
       });
 
-      MethodSpec.Builder writeObject = MethodSpec.methodBuilder("writeObject")
+      MethodSpec.Builder serialize = MethodSpec.methodBuilder("serialize")
           .addAnnotation(Override.class)
           .addModifiers(Modifier.PUBLIC)
           .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
@@ -642,7 +642,7 @@ public class SerdeProcessor extends AbstractProcessor {
 
       typeBuilder
           .addMethod(impl.build())
-          .addMethod(writeObject.build());
+          .addMethod(serialize.build());
     }
   }
 

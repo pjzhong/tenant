@@ -32,7 +32,7 @@ import org.example.serde.Serializer;
 public class IntArraySerializer implements Serializer<int[]> {
 
   @Override
-  public int[] readObject(Serdes serializer, ByteBuf buf) {
+  public int[] deserialize(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
     int[] array = new int[length];
     for (int i = 0; i < length; i++) {
@@ -43,7 +43,7 @@ public class IntArraySerializer implements Serializer<int[]> {
 
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, int[] object) {
+  public void serialize(Serdes serializer, ByteBuf buf, int[] object) {
     final int length = object.length;
     serializer.writeVarInt32(buf, length);
     for (int o : object) {

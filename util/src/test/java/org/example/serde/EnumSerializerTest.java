@@ -18,15 +18,15 @@ public class EnumSerializerTest {
     ByteBuf byteBuf = Unpooled.buffer();
 
     for (EnumOne o : EnumOne.values()) {
-      serializer.writeObject(serdes, byteBuf, o);
+      serializer.serialize(serdes, byteBuf, o);
     }
 
     for (EnumOne o : EnumOne.values()) {
-      Assertions.assertEquals(o, serializer.readObject(serdes, byteBuf));
+      Assertions.assertEquals(o, serializer.deserialize(serdes, byteBuf));
     }
 
-    serializer.writeObject(serdes, byteBuf, null);
-    Assertions.assertNull(serializer.readObject(serdes, byteBuf));
+    serializer.serialize(serdes, byteBuf, null);
+    Assertions.assertNull(serializer.deserialize(serdes, byteBuf));
   }
 
   @Test
@@ -41,8 +41,8 @@ public class EnumSerializerTest {
 
     ByteBuf buf = Unpooled.buffer();
 
-    serializer.writeObject(buf, EnumOne.values());
-    Assertions.assertArrayEquals(EnumOne.values(), serializer.readObject(buf));
+    serializer.serialize(buf, EnumOne.values());
+    Assertions.assertArrayEquals(EnumOne.values(), serializer.deserialize(buf));
     Assertions.assertFalse(buf.isReadable());
 
     {
@@ -51,8 +51,8 @@ public class EnumSerializerTest {
       caseOne.two = EnumTwo.One;
       caseOne.values = EnumOne.values();
 
-      serializer.writeObject(buf, caseOne);
-      Assertions.assertEquals(caseOne, serializer.readObject(buf));
+      serializer.serialize(buf, caseOne);
+      Assertions.assertEquals(caseOne, serializer.deserialize(buf));
       Assertions.assertFalse(buf.isReadable());
     }
 
@@ -62,8 +62,8 @@ public class EnumSerializerTest {
       caseOne.two = EnumTwo.One;
       caseOne.list = new ArrayList<>(Arrays.asList(EnumOne.values()));
 
-      serializer.writeObject(buf, caseOne);
-      Assertions.assertEquals(caseOne, serializer.readObject(buf));
+      serializer.serialize(buf, caseOne);
+      Assertions.assertEquals(caseOne, serializer.deserialize(buf));
       Assertions.assertFalse(buf.isReadable());
     }
   }

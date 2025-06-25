@@ -49,7 +49,7 @@ public class ObjectSerializerTest {
 
     //unregister check
     assertThrows(RuntimeException.class,
-        () -> serializer.writeObject(buf, new DefaultConstructor()));
+        () -> serializer.serialize(buf, new DefaultConstructor()));
   }
 
   @Test
@@ -58,9 +58,9 @@ public class ObjectSerializerTest {
     obj.d = Double.MIN_VALUE;
 
     serializer.registerObject(PrimitiveObj.class);
-    serializer.writeObject(buf, obj);
+    serializer.serialize(buf, obj);
 
-    PrimitiveObj res = serializer.readObject(buf);
+    PrimitiveObj res = serializer.deserialize(buf);
     assertEquals(obj, res);
   }
 
@@ -72,9 +72,9 @@ public class ObjectSerializerTest {
     obj.b = 123;
 
     serializer.registerObject(WrapperObj.class);
-    serializer.writeObject(buf, obj);
+    serializer.serialize(buf, obj);
 
-    WrapperObj res = serializer.readObject(buf);
+    WrapperObj res = serializer.deserialize(buf);
     assertEquals(obj, res);
   }
 
@@ -97,9 +97,9 @@ public class ObjectSerializerTest {
     composeObj.wrap = wrap;
     composeObj.aaa = new AAA(1, 2, 3);
 
-    serializer.writeObject(buf, composeObj);
+    serializer.serialize(buf, composeObj);
 
-    ComposeObj res = serializer.readObject(buf);
+    ComposeObj res = serializer.deserialize(buf);
     assertEquals(composeObj, res);
   }
 
@@ -123,9 +123,9 @@ public class ObjectSerializerTest {
     child.A = ThreadLocalRandom.current().nextInt();
     child.ignore = ThreadLocalRandom.current().nextInt() + 1;
 
-    serializer.writeObject(buf, child);
+    serializer.serialize(buf, child);
 
-    Child res = serializer.readObject(buf);
+    Child res = serializer.deserialize(buf);
     assertEquals(child, res);
     assertNotEquals(child.ignore, res.ignore);
   }

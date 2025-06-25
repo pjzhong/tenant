@@ -17,9 +17,9 @@ public class RecordSerializerTest {
 
     Empty empty = new Empty();
     ByteBuf buf = Unpooled.buffer();
-    serdes.writeObject(buf, empty);
+    serdes.serialize(buf, empty);
 
-    Empty res = serdes.readObject(buf);
+    Empty res = serdes.deserialize(buf);
     assertEquals(empty, res);
   }
 
@@ -32,9 +32,9 @@ public class RecordSerializerTest {
 
     Compose<Double> abc = new Compose<Double>((byte) 0, 'c', (short) 1, 1, 2L, 3F, 3.0,false, "EEEEEE", new Empty());
     ByteBuf buf = Unpooled.buffer();
-    serdes.writeObject(buf, abc);
+    serdes.serialize(buf, abc);
 
-    Compose<Double> res = serdes.readObject(buf);
+    Compose<Double> res = serdes.deserialize(buf);
     assertEquals(abc, res);
   }
 
@@ -48,8 +48,8 @@ public class RecordSerializerTest {
     {
       ByteBuf buf = Unpooled.buffer();
       Empty empty = new Empty();
-      serdes.writeObject(buf, empty);
-      Empty res = serdes.readObject(buf);
+      serdes.serialize(buf, empty);
+      Empty res = serdes.deserialize(buf);
       assertEquals(empty, res);
       assertFalse(buf.isReadable());
     }
@@ -57,8 +57,8 @@ public class RecordSerializerTest {
     {
       ByteBuf buf = Unpooled.buffer();
       Compose<Double> abc = new Compose<Double>((byte) 0, 'c', (short) 1, 1, 2L, 3F, 3.0,false, "EEEEEE", new Empty());
-      serdes.writeObject(buf, abc);
-      Compose<Double> res = serdes.readObject(buf);
+      serdes.serialize(buf, abc);
+      Compose<Double> res = serdes.deserialize(buf);
       assertEquals(abc, res);
       assertFalse(buf.isReadable());
     }

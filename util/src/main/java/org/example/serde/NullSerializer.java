@@ -16,11 +16,11 @@ public final class NullSerializer implements Serializer<Object> {
   }
 
   @Override
-  public Object readObject(Serdes serializer, ByteBuf buf) {
+  public Object deserialize(Serdes serializer, ByteBuf buf) {
     return null;
   }
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, Object object) {
+  public void serialize(Serdes serializer, ByteBuf buf, Object object) {
   }
 }

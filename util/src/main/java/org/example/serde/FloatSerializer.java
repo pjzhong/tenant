@@ -12,12 +12,12 @@ import io.netty.buffer.ByteBuf;
 public class FloatSerializer implements Serializer<Float> {
 
   @Override
-  public Float readObject(Serdes serializer, ByteBuf buf) {
+  public Float deserialize(Serdes serializer, ByteBuf buf) {
     return buf.readFloat();
   }
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, Float object) {
+  public void serialize(Serdes serializer, ByteBuf buf, Float object) {
     buf.writeFloat(object);
   }
 

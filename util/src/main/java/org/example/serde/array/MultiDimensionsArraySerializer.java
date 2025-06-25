@@ -27,7 +27,7 @@ public class MultiDimensionsArraySerializer implements Serializer<Object> {
   }
 
   @Override
-  public Object readObject(Serdes serializer, ByteBuf buf) {
+  public Object deserialize(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
 
     Class<?> componentType;
@@ -48,14 +48,14 @@ public class MultiDimensionsArraySerializer implements Serializer<Object> {
     Object array = Array.newInstance(componentType, dimensions);
 
     for (int i = 0; i < length; i++) {
-      Array.set(array, i, serializer.readObject(buf));
+      Array.set(array, i, serializer.deserialize(buf));
     }
     return array;
   }
 
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, Object object) {
+  public void serialize(Serdes serializer, ByteBuf buf, Object object) {
     final int length = Array.getLength(object);
     serializer.writeVarInt32(buf, length);
 
@@ -78,7 +78,7 @@ public class MultiDimensionsArraySerializer implements Serializer<Object> {
     }
 
     for (int i = 0; i < length; i++) {
-      serializer.writeObject(buf, Array.get(object, i));
+      serializer.serialize(buf, Array.get(object, i));
     }
   }
 

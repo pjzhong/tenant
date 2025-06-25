@@ -298,7 +298,7 @@ public final class NettyByteBufUtil {
       int writerIndex = composite.writerIndex();
       composite.writeInt(0);
 
-      serdes.writeObject(composite, message);
+      serdes.serialize(composite, message);
       composite.addComponent(true, buffer.retain());
       composite.setInt(writerIndex, composite.writerIndex() - writerIndex);
       return composite;

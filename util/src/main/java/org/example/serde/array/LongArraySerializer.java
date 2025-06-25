@@ -32,7 +32,7 @@ import org.example.serde.Serializer;
 public class LongArraySerializer implements Serializer<long[]> {
 
   @Override
-  public long[] readObject(Serdes serializer, ByteBuf buf) {
+  public long[] deserialize(Serdes serializer, ByteBuf buf) {
     int length = serializer.readVarInt32(buf);
     long[] array = new long[length];
     for (int i = 0; i < length; i++) {
@@ -43,7 +43,7 @@ public class LongArraySerializer implements Serializer<long[]> {
 
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, long[] object) {
+  public void serialize(Serdes serializer, ByteBuf buf, long[] object) {
     final int length = object.length;
     serializer.writeVarInt32(buf, length);
     for (long o : object) {

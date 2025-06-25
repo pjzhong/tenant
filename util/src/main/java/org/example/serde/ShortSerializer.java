@@ -12,12 +12,12 @@ import io.netty.buffer.ByteBuf;
 public class ShortSerializer implements Serializer<Short> {
 
   @Override
-  public Short readObject(Serdes serializer, ByteBuf buf) {
+  public Short deserialize(Serdes serializer, ByteBuf buf) {
     return buf.readShort();
   }
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, Short object) {
+  public void serialize(Serdes serializer, ByteBuf buf, Short object) {
     buf.writeShort(object);
   }
 

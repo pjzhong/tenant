@@ -49,8 +49,8 @@ public class CollectionSerializerTest {
       col.add(random.nextInt());
     }
 
-    serializer.writeObject(buf, col);
-    List<Integer> res = serializer.readObject(buf);
+    serializer.serialize(buf, col);
+    List<Integer> res = serializer.deserialize(buf);
     assertEquals(col, res);
   }
 
@@ -63,8 +63,8 @@ public class CollectionSerializerTest {
       col.add(random.nextDouble());
     }
 
-    serializer.writeObject(buf, col);
-    List<Double> res = serializer.readObject(buf);
+    serializer.serialize(buf, col);
+    List<Double> res = serializer.deserialize(buf);
     assertEquals(col, res);
   }
 
@@ -79,8 +79,8 @@ public class CollectionSerializerTest {
 
     col.set(random.nextInt(size), null);
 
-    serializer.writeObject(buf, col);
-    List<String> res = serializer.readObject(buf);
+    serializer.serialize(buf, col);
+    List<String> res = serializer.deserialize(buf);
     assertEquals(col, res);
   }
 
@@ -100,8 +100,8 @@ public class CollectionSerializerTest {
 
     col.set(random.nextInt(size), null);
 
-    serializer.writeObject(buf, col);
-    List<List<String>> res = serializer.readObject(buf);
+    serializer.serialize(buf, col);
+    List<List<String>> res = serializer.deserialize(buf);
     assertEquals(col, res);
   }
 

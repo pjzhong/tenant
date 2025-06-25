@@ -49,8 +49,8 @@ public class RefImple {
   @OutputTimeUnit(TimeUnit.SECONDS)
   public void codecRefTest(Blackhole bh) {
     buf.clear();
-    refSerde.writeObject(buf, object);
-    CodecObject object2 = refSerde.readObject(buf);
+    refSerde.serialize(buf, object);
+    CodecObject object2 = refSerde.deserialize(buf);
 
     if (!object2.equals(object)) {
       throw new RuntimeException();

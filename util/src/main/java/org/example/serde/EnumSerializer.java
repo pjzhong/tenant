@@ -37,7 +37,7 @@ public class EnumSerializer<E extends Enum<E>> implements Serializer<E> {
   }
 
   @Override
-  public E readObject(Serdes serializer, ByteBuf buf) {
+  public E deserialize(Serdes serializer, ByteBuf buf) {
     int idx = serializer.readVarInt32(buf);
     if (idx == NULL_IDX) {
       return null;
@@ -52,7 +52,7 @@ public class EnumSerializer<E extends Enum<E>> implements Serializer<E> {
   }
 
   @Override
-  public void writeObject(Serdes serializer, ByteBuf buf, E object) {
+  public void serialize(Serdes serializer, ByteBuf buf, E object) {
     int idx = NULL_IDX;
     if (object != null) {
       idx = object.ordinal();

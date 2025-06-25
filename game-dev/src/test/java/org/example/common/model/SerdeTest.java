@@ -50,8 +50,8 @@ public class SerdeTest {
   public void resTest() {
     ByteBuf byteBuf = Unpooled.buffer();
 
-    codeSerde.writeObject(byteBuf, res);
-    ResMove move = codeSerde.readObject(byteBuf);
+    codeSerde.serialize(byteBuf, res);
+    ResMove move = codeSerde.deserialize(byteBuf);
 
     Assertions.assertEquals(res, move);
   }
@@ -60,8 +60,8 @@ public class SerdeTest {
   public void reqTest() {
     ByteBuf byteBuf = Unpooled.buffer();
 
-    codeSerde.writeObject(byteBuf, req);
-    ReqMove move = codeSerde.readObject(byteBuf);
+    codeSerde.serialize(byteBuf, req);
+    ReqMove move = codeSerde.deserialize(byteBuf);
 
     Assertions.assertEquals(req, move);
   }
@@ -70,10 +70,10 @@ public class SerdeTest {
   public void mixTest() {
     ByteBuf byteBuf = Unpooled.buffer();
 
-    codeSerde.writeObject(byteBuf, req);
-    codeSerde.writeObject(byteBuf, res);
-    ReqMove reqMove = codeSerde.readObject(byteBuf);
-    ResMove resMove = codeSerde.readObject(byteBuf);
+    codeSerde.serialize(byteBuf, req);
+    codeSerde.serialize(byteBuf, res);
+    ReqMove reqMove = codeSerde.deserialize(byteBuf);
+    ResMove resMove = codeSerde.deserialize(byteBuf);
 
     Assertions.assertEquals(req, reqMove);
     Assertions.assertEquals(res, resMove);

@@ -2,7 +2,6 @@ package org.example.exec;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
@@ -34,7 +33,7 @@ public class VirtualExecutor implements Executor {
     }
   }
 
-  private final Queue<Runnable> queue;
+  private final MpscUnboundedArrayQueue<Runnable> queue;
   private final ThreadFactory factory;
   private final Identity identity;
   private volatile int value;
@@ -72,6 +71,17 @@ public class VirtualExecutor implements Executor {
     }
   }
 
+  private void doRun() {
+    for (int i = 0; i < CHUNK; i++) {
+      Runnable runnable = queue.poll();
+      if (runnable == null) {
+        break;
+      }
+
+      runnable.run();
+    }
+  }
+
   @Override
   public void execute(Runnable command) {
     exec(command);
@@ -102,15 +112,6 @@ public class VirtualExecutor implements Executor {
     }
 
     return VirutalExecutors.commonPool().getExecutor(identity);
-  }
-
-  private void doRun() {
-    for (int i = 0; i < CHUNK; i++) {
-      Runnable runnable = queue.poll();
-      if (runnable != null) {
-        runnable.run();
-      }
-    }
   }
 
   /**

@@ -4,7 +4,6 @@ import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import org.example.serde.array.MultiDimensionsArraySerializer;
 import org.example.serde.array.OneDimensionArraySerializer;
@@ -27,10 +26,13 @@ public final class Serdes {
   /**
    * 序列化注册 [目标类型 -> 序列化实现]
    */
-  private Map<Class<?>, SerializerPair> type2Serders;
+  private HashMap<Class<?>, SerializerPair> type2Serders;
 
   public record SerializerPair(Serializer<?> serializer, Class<?> clz, int typeId) {
 
+    public boolean isSupport(Serdes serdes, Class<?> clazz) {
+      return serializer().isSupport(serdes, clazz);
+    }
   }
 
   public Serdes() {
@@ -251,10 +253,7 @@ public final class Serdes {
     }
 
     Class<?> clazz = object.getClass();
-    SerializerPair pair = getSerializerPair(clazz);
-    if (pair == null) {
-      pair = trySerachAndBindSerializer(clazz);
-    }
+    SerializerPair pair = trySerachAndBindSerializer(clazz);
 
     if (pair == null) {
       throw new RuntimeException("类型:" + clazz + "，未注册");
@@ -272,19 +271,33 @@ public final class Serdes {
   }
 
   public SerializerPair trySerachAndBindSerializer(Class<?> clazz) {
-    SerializerPair pair = type2Serders.get(clazz);
+    HashMap<Class<?>, SerializerPair> temp = type2Serders;
+    SerializerPair pair = temp.get(clazz);
     if (pair != null) {
       return pair;
     }
 
-    SerializerPair res = id2Serders.values().stream()
-        .filter(id2Serde -> id2Serde.serializer.isSupport(this, clazz))
-        .min(Comparator.comparingInt(SerializerPair::typeId))
-        .orElse(null);
+    synchronized (this) {
+      temp = type2Serders;
+      pair = temp.get(clazz);
+      if (pair != null) {
+        return pair;
+      }
 
-    if (res != null) {
-      type2Serders.put(clazz, pair = res);
+      pair = id2Serders
+          .values()
+          .stream()
+          .filter(id2Serde -> id2Serde.isSupport(this, clazz))
+          .min(Comparator.comparingInt(SerializerPair::typeId))
+          .orElse(null);
+
+      if (pair != null) {
+        temp = new HashMap<>(type2Serders);
+        temp.put(clazz, pair);
+        type2Serders = temp;
+      }
     }
+
     return pair;
   }
 }

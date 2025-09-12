@@ -120,7 +120,7 @@
     <module>util</module>
     <!--    <module>proxy-ser-dev</module>-->
     <!--    <module>proxy-test-dev</module>-->
-    <!--    <module>benchmark</module>-->
+    <module>benchmark</module>
   </modules>
 
   <dependencyManagement>

@@ -1,5 +1,6 @@
 package org.example.common.model;
 
+import java.util.Objects;
 import org.example.serde.Serde;
 
 @Serde
@@ -9,6 +10,14 @@ public class CommonRes<T> {
   private boolean suc;
   /** 结果 */
   private T res;
+
+  public CommonRes() {
+  }
+
+  public CommonRes(boolean suc, T res) {
+    this.suc = suc;
+    this.res = res;
+  }
 
   public boolean isSuc() {
     return suc;
@@ -26,5 +35,21 @@ public class CommonRes<T> {
   public CommonRes<T> setRes(T res) {
     this.res = res;
     return this;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof CommonRes<?> commonRes)) {
+      return false;
+    }
+    return suc == commonRes.suc && Objects.equals(res, commonRes.res);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(suc, res);
   }
 }

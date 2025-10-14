@@ -96,8 +96,12 @@ public class SerdeProcessor extends AbstractProcessor {
             case CLASS -> {
               List<Element> fieldElements = BeanSerde.getAllFieldElements(this,
                   clazz);
-              BeanSerde.deSerializerCode(this, builder, typename, fieldElements);
-              BeanSerde.serializerCode(this, builder, typename, fieldElements);
+              BeanSerde.buildDeSerialzier(this, builder, typename, fieldElements);
+              BeanSerde.buildSerializerCode(this, builder, typename, fieldElements);
+              if (isFinalSerde(clazz)) {
+                buildFastDeSerialzier(builder, typename);
+                buildFastSerializerCode(builder, typename);
+              }
               constructor(builder);
 
               reigsterMethod(clz, typename, builder);
@@ -110,9 +114,12 @@ public class SerdeProcessor extends AbstractProcessor {
             }
             case RECORD -> {
               List<Element> fieldElements = RecordSerde.getAllFieldElements(clazz);
-              RecordSerde.deSerializerCode(this, builder, typename, fieldElements);
-              RecordSerde.serializerCode(this, builder, typename, fieldElements);
+              RecordSerde.buildDeSerializerCode(this, builder, typename, fieldElements);
+              RecordSerde.buildSerializerCode(this, builder, typename, fieldElements);
+              buildFastDeSerialzier(builder, typename);
+              buildFastSerializerCode(builder, typename);
               constructor(builder);
+
               reigsterMethod(clz, typename, builder);
 
               JavaFileObject builderFile = processingEnv.getFiler()
@@ -188,7 +195,7 @@ public class SerdeProcessor extends AbstractProcessor {
    *
    * @since 2025/6/1 21:37
    */
-  private static void buildFastDeSerialzier(Builder typeBuilder, TypeName typeName) {
+  public static void buildFastDeSerialzier(Builder typeBuilder, TypeName typeName) {
     String typeIdVarName = "typeId";
     MethodSpec.Builder fastReadObject = MethodSpec.methodBuilder(FAST_DESERIALZIER_IMPL)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
@@ -210,7 +217,7 @@ public class SerdeProcessor extends AbstractProcessor {
    *
    * @since 2025/6/1 21:37
    */
-  private static void buildFastSerializerCode(Builder typeBuilder, TypeName typeName) {
+  public static void buildFastSerializerCode(Builder typeBuilder, TypeName typeName) {
     MethodSpec.Builder fastReadObject = MethodSpec.methodBuilder(FAST_SERIALIZER_IMPL)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
         .addParameter(Serdes.class, SERIALIZER_VAR_NAME)
@@ -229,11 +236,17 @@ public class SerdeProcessor extends AbstractProcessor {
     typeBuilder.addMethod(fastReadObject.build());
   }
 
+  private static boolean isFinalSerde(Element fullElement) {
+    return fullElement != null
+        && fullElement.getAnnotation(Serde.class) != null
+        && fullElement.getModifiers().contains(Modifier.FINAL);
+  }
+
   private static CodeBlock tryFastDeSerialzier(SerdeProcessor processor, Element element) {
     Element fullElement = processor.processingEnv.getTypeUtils().asElement(element.asType());
 
     CodeBlock.Builder builder = CodeBlock.builder();
-    if (fullElement != null && fullElement.getAnnotation(Serde.class) != null) {
+    if (isFinalSerde(fullElement)) {
       TypeElement clazz = (TypeElement) fullElement;
       ClassName typeName = ClassName.get(clazz);
       ClassName serderTypeName = ClassName.get(typeName.packageName(),
@@ -253,12 +266,13 @@ public class SerdeProcessor extends AbstractProcessor {
     return builder.build();
   }
 
+
   private static CodeBlock tryFastSerialzier(SerdeProcessor processor, Element element,
       CodeBlock getter) {
     Element fullElement = processor.processingEnv.getTypeUtils().asElement(element.asType());
 
     CodeBlock.Builder builder = CodeBlock.builder();
-    if (fullElement != null && fullElement.getAnnotation(Serde.class) != null) {
+    if (isFinalSerde(fullElement)) {
       TypeElement clazz = (TypeElement) fullElement;
       ClassName typeName = ClassName.get(clazz);
       ClassName serderTypeName = ClassName.get(typeName.packageName(),
@@ -295,14 +309,7 @@ public class SerdeProcessor extends AbstractProcessor {
           .collect(Collectors.toUnmodifiableList());
     }
 
-    public static void deSerializerCode(SerdeProcessor processor, TypeSpec.Builder typeBuilder,
-        TypeName typeName,
-        List<Element> fieldElements) {
-      buildDeSerializerCode(processor, typeBuilder, typeName, fieldElements);
-      buildFastDeSerialzier(typeBuilder, typeName);
-    }
-
-    private static void buildDeSerializerCode(SerdeProcessor processor, Builder typeBuilder,
+    public static void buildDeSerializerCode(SerdeProcessor processor, Builder typeBuilder,
         TypeName typeName,
         List<Element> fieldElements) {
       MethodSpec.Builder impl = MethodSpec.methodBuilder(DESERIALZIER_IMPL)
@@ -351,14 +358,7 @@ public class SerdeProcessor extends AbstractProcessor {
           .addMethod(deserialize.build());
     }
 
-    public static void serializerCode(SerdeProcessor processor, TypeSpec.Builder typeBuilder,
-        TypeName typeName,
-        List<Element> fieldElements) {
-      buildSerializerCode(processor, typeBuilder, typeName, fieldElements);
-      buildFastSerializerCode(typeBuilder, typeName);
-    }
-
-    private static void buildSerializerCode(SerdeProcessor processor, Builder typeBuilder,
+    public static void buildSerializerCode(SerdeProcessor processor, Builder typeBuilder,
         TypeName typeName,
         List<Element> fieldElements) {
       MethodSpec.Builder impl = MethodSpec.methodBuilder(SERIALIZER_IMPL)
@@ -488,15 +488,7 @@ public class SerdeProcessor extends AbstractProcessor {
       return fields;
     }
 
-    public static void deSerializerCode(SerdeProcessor processor, TypeSpec.Builder typeBuilder,
-        TypeName typeName,
-        List<Element> fieldElements) {
-
-      buildDeSerialzier(processor, typeBuilder, typeName, fieldElements);
-      buildFastDeSerialzier(typeBuilder, typeName);
-    }
-
-    private static void buildDeSerialzier(SerdeProcessor processor, Builder typeBuilder,
+    public static void buildDeSerialzier(SerdeProcessor processor, Builder typeBuilder,
         TypeName typeName,
         List<Element> fieldElements) {
       MethodSpec.Builder impl = MethodSpec.methodBuilder(DESERIALZIER_IMPL)
@@ -566,15 +558,7 @@ public class SerdeProcessor extends AbstractProcessor {
           .addMethod(deserialize.build());
     }
 
-
-    public static void serializerCode(SerdeProcessor processor, TypeSpec.Builder typeBuilder,
-        TypeName typeName,
-        List<Element> fieldElements) {
-      buildSerializerCode(processor, typeBuilder, typeName, fieldElements);
-      buildFastSerializerCode(typeBuilder, typeName);
-    }
-
-    private static void buildSerializerCode(SerdeProcessor processor, Builder typeBuilder,
+    public static void buildSerializerCode(SerdeProcessor processor, Builder typeBuilder,
         TypeName typeName,
         List<Element> fieldElements) {
       MethodSpec.Builder impl = MethodSpec.methodBuilder(SERIALIZER_IMPL)

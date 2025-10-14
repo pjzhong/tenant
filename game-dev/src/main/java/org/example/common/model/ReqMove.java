@@ -10,7 +10,7 @@ import org.example.serde.Serde;
  * @since 2021年09月27日 15:18:34
  **/
 @Serde
-public class ReqMove {
+public final class ReqMove {
 
   /** 对象ID */
   private long id;

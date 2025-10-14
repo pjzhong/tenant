@@ -51,6 +51,13 @@ public class ExampleFacdeTest {
   }
 
   @RepeatedTest(100)
+  public void hi(@Autowired ExampleFacadeInvoker invoker)
+      throws Exception {
+
+    Assertions.assertEquals("hi", invoker.of(rndGameId).hi().get());
+  }
+
+  @RepeatedTest(100)
   public void callBack(@Autowired ExampleFacadeInvoker invoker)
       throws Exception {
     ThreadLocalRandom random = ThreadLocalRandom.current();

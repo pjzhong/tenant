@@ -21,8 +21,9 @@ public class ExampleFacade implements ExecSupplier {
 
   private static final ExampleIdentity IDENTITY = new ExampleIdentity();
 
-  public ExampleFacade() {
-
+  @Req
+  public String hi() {
+    return "hi";
   }
 
   @Req

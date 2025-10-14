@@ -66,6 +66,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
   private static final String CONNECTION_FIELD_NAME = "c";
   private static final String BUF_VAR_NAME = "buf";
   private static final String MANAGER_VAR_NAME = "manager";
+  private static final String PROTO_id_VAR_NAME = "id_";
 
 
   @Override
@@ -99,6 +100,10 @@ public class RpcInvokerProcessor extends AbstractProcessor {
 
   public void generateOuter(TypeElement typeElement, List<ExecutableElement> elements)
       throws Exception {
+    if (elements.isEmpty()) {
+      return;
+    }
+
     TypeSpec inner = generateInner(typeElement, elements);
 
     String simpleName = typeElement.getSimpleName() + "Invoker";
@@ -167,8 +172,6 @@ public class RpcInvokerProcessor extends AbstractProcessor {
   }
 
   public TypeSpec generateInner(TypeElement typeElement, List<ExecutableElement> methods) {
-    final String protoIdVarName = "id_";
-
     TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(INNER_SIMPLE_NAME)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
 
@@ -181,6 +184,14 @@ public class RpcInvokerProcessor extends AbstractProcessor {
             .addStatement("this.$L = $L", CONNECTION_FIELD_NAME, CONNECTION_FIELD_NAME)
             .build());
 
+    generateInnerMethod(typeElement, methods, typeBuilder);
+
+    return typeBuilder.build();
+  }
+
+  private static void generateInnerMethod(TypeElement typeElement, List<ExecutableElement> methods,
+      TypeSpec.Builder typeBuilder) {
+    final String starVarName = "start";
     for (ExecutableElement method : methods) {
       Name methodName = method.getSimpleName();
       TypeMirror returnTypeMirror = method.getReturnType();
@@ -194,75 +205,66 @@ public class RpcInvokerProcessor extends AbstractProcessor {
       int id = Util.calcProtoId(typeElement, method);
       methodBuilder
           .addJavadoc("{@link $T#$L}", typeElement, methodName)
-          .addStatement("final int $L = $L", protoIdVarName, id)
+          .addStatement("final int $L = $L", PROTO_id_VAR_NAME, id)
       ;
 
       methodBuilder
           .addCode("\n");
 
-      CodeBlock.Builder paramSerde = buildMethodParamsSerde(method, methodBuilder);
+      Builder paramSerde = buildMethodParamsSerde(method, methodBuilder);
 
-      boolean noReqParams = paramSerde.isEmpty() && !hasReturn;
-      if (noReqParams) {
+      methodBuilder
+          .addStatement("$T $L = $T.DEFAULT.buffer()", BYTE_BUF, BUF_VAR_NAME, POOLED_UTIL)
+          .beginControlFlow("try")
+          .addStatement("final int $L = $L.writerIndex()", starVarName, BUF_VAR_NAME)
+          .addStatement("$L.writerIndex($L + Integer.BYTES)", BUF_VAR_NAME, starVarName)
+          .addStatement("$L.writeVarInt32($L, $L)", SERIALIZER_VAR_NAME, BUF_VAR_NAME,
+              PROTO_id_VAR_NAME)
+          .addCode("\n")
+      ;
+
+      if (hasReturn) {
         methodBuilder
-            .addStatement("$T $L = $T.EMPTY_BUFFER", BYTE_BUF, BUF_VAR_NAME, Util.UNNPOOLED_UTIL)
+            .addStatement("final int $L = $L.nextCallBackMsgId()", MSG_ID_VAR_NAME,
+                MANAGER_VAR_NAME)
+            .addStatement("$L.writeVarInt32($L, $L)", SERIALIZER_VAR_NAME, BUF_VAR_NAME,
+                MSG_ID_VAR_NAME)
+            .addCode("\n")
+            .addCode(paramSerde.build())
+            .returns(ParameterizedTypeName.get(
+                Util.NET_COMPLETE_ABLE_FUTURE_CLASS_NAME, TypeName.get(returnTypeMirror).box()
+            ))
+            .addStatement("$L.setInt($L, $L.readableBytes())", BUF_VAR_NAME, starVarName,
+                BUF_VAR_NAME)
             .addStatement(
-                "remoting.invoke($L, $T.of($L, $L))",
+                "return remoting.invoke($L, $L, $L, $L)",
+                MANAGER_VAR_NAME,
                 CONNECTION_FIELD_NAME,
-                MESSAGE_CLASS_NAME,
-                protoIdVarName,
-                BUF_VAR_NAME);
+                BUF_VAR_NAME,
+                MSG_ID_VAR_NAME);
+
       } else {
-
         methodBuilder
-            .addStatement("$T $L = $T.DEFAULT.buffer()", BYTE_BUF, BUF_VAR_NAME, POOLED_UTIL);
-
-        methodBuilder.beginControlFlow("try");
-
-        if (hasReturn) {
-          methodBuilder
-              .addStatement("int $L = $L.nextCallBackMsgId()", MSG_ID_VAR_NAME,
-                  MANAGER_VAR_NAME)
-              .addStatement("$L.writeVarInt32($L, $L)", SERIALIZER_VAR_NAME, BUF_VAR_NAME,
-                  MSG_ID_VAR_NAME)
-              .addCode(paramSerde.build())
-              .returns(ParameterizedTypeName.get(
-                  Util.NET_COMPLETE_ABLE_FUTURE_CLASS_NAME, TypeName.get(returnTypeMirror).box()
-              ))
-              .addStatement(
-                  "return remoting.invoke($L, $L, $T.of($L, $L), $L)",
-                  MANAGER_VAR_NAME,
-                  CONNECTION_FIELD_NAME,
-                  MESSAGE_CLASS_NAME,
-                  protoIdVarName,
-                  BUF_VAR_NAME,
-                  MSG_ID_VAR_NAME);
-
-        } else {
-          methodBuilder
-              .addCode(paramSerde.build())
-              .addStatement(
-                  "remoting.invoke($L, $T.of($L, $L))",
-                  CONNECTION_FIELD_NAME,
-                  MESSAGE_CLASS_NAME,
-                  protoIdVarName,
-                  BUF_VAR_NAME
-              );
-        }
-
-        methodBuilder
-            .endControlFlow()
-            .beginControlFlow("catch(Throwable t)")
-            .addStatement("$T.release($L)", ReferenceCountUtil.class, BUF_VAR_NAME)
-            .addStatement("throw t")
-            .endControlFlow()
-            .addCode("\n");
+            .addCode(paramSerde.build())
+            .addStatement("$L.setInt($L, $L.readableBytes())", BUF_VAR_NAME, starVarName,
+                BUF_VAR_NAME)
+            .addStatement(
+                "remoting.invoke($L, $L)",
+                CONNECTION_FIELD_NAME,
+                BUF_VAR_NAME
+            );
       }
+
+      methodBuilder
+          .endControlFlow()
+          .beginControlFlow("catch(Throwable t)")
+          .addStatement("$T.release($L)", ReferenceCountUtil.class, BUF_VAR_NAME)
+          .addStatement("throw t")
+          .endControlFlow()
+          .addCode("\n");
 
       typeBuilder.addMethod(methodBuilder.build());
     }
-
-    return typeBuilder.build();
   }
 
   private static Builder buildMethodParamsSerde(ExecutableElement method,
@@ -298,6 +300,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
       }
 
     }
+    paramSerde.add("\n");
     return paramSerde;
   }
 

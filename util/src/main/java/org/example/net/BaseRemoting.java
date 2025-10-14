@@ -1,5 +1,6 @@
 package org.example.net;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.ReferenceCountUtil;
 import java.util.concurrent.CompletableFuture;
@@ -13,7 +14,7 @@ public class BaseRemoting {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
-  public void invoke(final Connection conn, final Message request) {
+  public void invoke(final Connection conn, final ByteBuf request) {
     try {
       conn.channel().writeAndFlush(request).addListener(f -> {
         if (!f.isSuccess()) {
@@ -40,7 +41,7 @@ public class BaseRemoting {
    * @since 2021年08月15日 15:45:03
    */
   public <T> AsyncFuture<T> invoke(ConnectionManager manager, final Connection conn,
-      final Message message, int msgId) {
+      final ByteBuf message, int msgId) {
     return invokeWithFuture(manager, conn, message, msgId, 3, TimeUnit.SECONDS);
   }
 
@@ -53,7 +54,7 @@ public class BaseRemoting {
    * @since 2021年08月15日 15:45:03
    */
   public <T> AsyncFuture<T> invokeWithFuture(ConnectionManager manager, Connection conn,
-      Message message, int msgId, final long timeout, TimeUnit timeUnit) {
+      ByteBuf message, int msgId, final long timeout, TimeUnit timeUnit) {
     CompletableFuture<T> f = new CompletableFuture<>();
     AsyncFuture<T> wrapper = AsyncFuture.of(f);
     try {

@@ -75,6 +75,8 @@ final class Util {
 
   public static final String FACADE_VAR_NAME = "f";
 
+  public static final String BUF_VAR_NAME = "buf";
+
   public static List<ExecutableElement> getReqMethod(ProcessingEnvironment processingEnv,
       TypeElement typeElement, Class<? extends Annotation> anno) {
     List<ExecutableElement> res = new ArrayList<>();

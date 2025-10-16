@@ -1,6 +1,7 @@
 package org.example.net.anno.processor;
 
 import static org.example.net.anno.processor.Util.BASE_REMOTING;
+import static org.example.net.anno.processor.Util.BUF_VAR_NAME;
 import static org.example.net.anno.processor.Util.BYTE_BUF;
 import static org.example.net.anno.processor.Util.COMMON_SERIALIZER;
 import static org.example.net.anno.processor.Util.CONNECTION_CLASS_NAME;
@@ -64,7 +65,6 @@ public class RpcInvokerProcessor extends AbstractProcessor {
   private static final String INNER_SIMPLE_NAME = "Invoker";
 
   private static final String CONNECTION_FIELD_NAME = "c";
-  private static final String BUF_VAR_NAME = "buf";
   private static final String MANAGER_VAR_NAME = "manager";
   private static final String PROTO_id_VAR_NAME = "id_";
 
@@ -189,7 +189,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
     return typeBuilder.build();
   }
 
-  private static void generateInnerMethod(TypeElement typeElement, List<ExecutableElement> methods,
+  private void generateInnerMethod(TypeElement typeElement, List<ExecutableElement> methods,
       TypeSpec.Builder typeBuilder) {
     final String starVarName = "start";
     for (ExecutableElement method : methods) {
@@ -267,7 +267,7 @@ public class RpcInvokerProcessor extends AbstractProcessor {
     }
   }
 
-  private static Builder buildMethodParamsSerde(ExecutableElement method,
+  private Builder buildMethodParamsSerde(ExecutableElement method,
       MethodSpec.Builder methodBuilder) {
     Builder paramSerde = CodeBlock.builder();
     for (VariableElement variableElement : method.getParameters()) {
@@ -296,7 +296,8 @@ public class RpcInvokerProcessor extends AbstractProcessor {
         case LONG -> paramSerde.addStatement("$L.writeVarInt64($L, $L)", SERIALIZER_VAR_NAME,
             BUF_VAR_NAME,
             name);
-        default -> paramSerde.addStatement("$L.serialize(buf, $L)", SERIALIZER_VAR_NAME, name);
+        default -> RpcSerdesUtil.tryFastSerde(processingEnv, paramSerde, variableElement);
+        // default -> paramSerde.addStatement("$L.serialize(buf, $L)", SERIALIZER_VAR_NAME, name);
       }
 
     }

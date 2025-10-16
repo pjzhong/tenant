@@ -1,5 +1,6 @@
 package org.example.net.anno.processor;
 
+import static org.example.net.anno.processor.Util.BUF_VAR_NAME;
 import static org.example.net.anno.processor.Util.BYTE_BUF;
 import static org.example.net.anno.processor.Util.CONNECTION_CLASS_NAME;
 import static org.example.net.anno.processor.Util.FACADE_VAR_NAME;
@@ -62,7 +63,6 @@ public class RpcHandlerProcessor extends AbstractProcessor {
   public static final String DISPATCHER_VAR_NAME = "dispatcher";
   private static final String CONNECTION_VAR_NAME = "c";
   private static final String MESSAGE_VAR_NAME = "m";
-  private static final String BUF_VAR_NAME = "b";
   private static final String RUNNABLE_VAR_NAME = "r";
 
   private static final ParameterSpec CONNECTION_PARAM_SPEC = ParameterSpec.builder(
@@ -213,47 +213,9 @@ public class RpcHandlerProcessor extends AbstractProcessor {
             BUF_VAR_NAME);
       }
 
-      List<? extends VariableElement> params = element.getParameters();
-      for (VariableElement p : params) {
-        final String pname = p.getSimpleName().toString();
-        TypeMirror ptype = p.asType();
-        switch (ptype.getKind()) {
-          case BOOLEAN ->
-              methodBuilder.addStatement("boolean $L = $L.readBoolean()", pname, BUF_VAR_NAME);
-          case BYTE -> methodBuilder.addStatement("byte $L = $L.readByte()", pname, BUF_VAR_NAME);
-          case SHORT ->
-              methodBuilder.addStatement("short $L = $L.readShort()", pname, BUF_VAR_NAME);
-          case CHAR -> methodBuilder.addStatement("char $L = $L.readChar()", pname, BUF_VAR_NAME);
-          case FLOAT ->
-              methodBuilder.addStatement("float $L = $L.readFloat()", pname, BUF_VAR_NAME);
-          case DOUBLE ->
-              methodBuilder.addStatement("double $L = $L.readDouble()", pname, BUF_VAR_NAME);
-          case INT ->
-              methodBuilder.addStatement("int $L = $L.readVarInt32($L)", pname, SERIALIZER_VAR_NAME,
-                  BUF_VAR_NAME);
-          case LONG -> methodBuilder.addStatement("long $L = $L.readVarInt64($L)", pname,
-              SERIALIZER_VAR_NAME,
-              BUF_VAR_NAME);
-          default -> {
-            TypeMirror paramType = p.asType();
-            TypeName paramTypeName = TypeName.get(paramType);
+      CodeBlock paramDeSerde = paramDeSerde(element);
 
-            if (paramTypeName.equals(CONNECTION_CLASS_NAME)) {
-              methodBuilder.addStatement("$T $L = $L", CONNECTION_CLASS_NAME, pname,
-                  CONNECTION_VAR_NAME);
-            } else if (paramTypeName.equals(MESSAGE_CLASS_NAME)) {
-              methodBuilder.addStatement("$T $L = $L", MESSAGE_CLASS_NAME, pname,
-                  MESSAGE_VAR_NAME);
-            } else {
-              methodBuilder.addStatement("$T $L = $L.deserialize($L)", TypeName.get(ptype), pname,
-                  SERIALIZER_VAR_NAME, BUF_VAR_NAME);
-            }
-          }
-        }
-      }
-      if (!params.isEmpty()) {
-        methodBuilder.addCode("\n");
-      }
+      methodBuilder.addCode(paramDeSerde);
 
       CodeBlock.Builder invokeCodeBlock = buildInvokeCodeBlock(element);
       if (info.executor != null) {
@@ -271,6 +233,51 @@ public class RpcHandlerProcessor extends AbstractProcessor {
 
 
     }
+  }
+
+  private CodeBlock paramDeSerde(ExecutableElement element) {
+    CodeBlock.Builder paramDeSerde = CodeBlock.builder();
+    List<? extends VariableElement> params = element.getParameters();
+    for (VariableElement p : params) {
+      final Name pname = p.getSimpleName();
+      TypeMirror ptype = p.asType();
+      switch (ptype.getKind()) {
+        case BOOLEAN ->
+            paramDeSerde.addStatement("boolean $L = $L.readBoolean()", pname, BUF_VAR_NAME);
+        case BYTE -> paramDeSerde.addStatement("byte $L = $L.readByte()", pname, BUF_VAR_NAME);
+        case SHORT -> paramDeSerde.addStatement("short $L = $L.readShort()", pname, BUF_VAR_NAME);
+        case CHAR -> paramDeSerde.addStatement("char $L = $L.readChar()", pname, BUF_VAR_NAME);
+        case FLOAT -> paramDeSerde.addStatement("float $L = $L.readFloat()", pname, BUF_VAR_NAME);
+        case DOUBLE ->
+            paramDeSerde.addStatement("double $L = $L.readDouble()", pname, BUF_VAR_NAME);
+        case INT ->
+            paramDeSerde.addStatement("int $L = $L.readVarInt32($L)", pname, SERIALIZER_VAR_NAME,
+                BUF_VAR_NAME);
+        case LONG -> paramDeSerde.addStatement("long $L = $L.readVarInt64($L)", pname,
+            SERIALIZER_VAR_NAME,
+            BUF_VAR_NAME);
+        default -> {
+          TypeMirror paramType = p.asType();
+          TypeName paramTypeName = TypeName.get(paramType);
+
+          if (paramTypeName.equals(CONNECTION_CLASS_NAME)) {
+            paramDeSerde.addStatement("$T $L = $L", CONNECTION_CLASS_NAME, pname,
+                CONNECTION_VAR_NAME);
+          } else if (paramTypeName.equals(MESSAGE_CLASS_NAME)) {
+            paramDeSerde.addStatement("$T $L = $L", MESSAGE_CLASS_NAME, pname,
+                MESSAGE_VAR_NAME);
+          } else {
+            RpcSerdesUtil.tryFastDeSerde(processingEnv, paramDeSerde, p);
+          }
+        }
+      }
+    }
+
+    if (!paramDeSerde.isEmpty()) {
+      paramDeSerde.add("\n");
+    }
+
+    return paramDeSerde.build();
   }
 
   /**

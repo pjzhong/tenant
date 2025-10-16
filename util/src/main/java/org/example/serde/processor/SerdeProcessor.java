@@ -45,11 +45,12 @@ import org.example.serde.Serializer;
 @AutoService(Processor.class)
 public class SerdeProcessor extends AbstractProcessor {
 
+  public static final String SERDE_SUB_FIX = "Serde";
   private static final String DESERIALZIER_IMPL = "deserialzierImpl";
-  private static final String FAST_DESERIALZIER_IMPL = "fastDeserialzier";
+  public static final String FAST_DESERIALZIER_IMPL = "fastDeserialzier";
   private static final String SERIALIZER_IMPL = "serializerImpl";
-  private static final String FAST_SERIALIZER_IMPL = "fastSerializer";
-  private static final String SERDE_SUB_FIX = "Serde";
+  public static final String FAST_SERIALIZER_IMPL = "fastSerializer";
+
   private static final String BUF_VAR_NAME = "buf";
   private static final String SERIALIZER_VAR_NAME = "serializer";
   private static final String OBJECT_VAR_NAME = "object";
@@ -236,7 +237,7 @@ public class SerdeProcessor extends AbstractProcessor {
     typeBuilder.addMethod(fastReadObject.build());
   }
 
-  private static boolean isFinalSerde(Element fullElement) {
+  public static boolean isFinalSerde(Element fullElement) {
     return fullElement != null
         && fullElement.getAnnotation(Serde.class) != null
         && fullElement.getModifiers().contains(Modifier.FINAL);

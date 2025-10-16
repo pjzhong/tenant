@@ -16,8 +16,6 @@ import com.palantir.javapoet.ParameterSpec;
 import com.palantir.javapoet.TypeName;
 import com.palantir.javapoet.TypeSpec;
 import io.netty.util.ReferenceCountUtil;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
@@ -181,9 +179,9 @@ public class RpcHandlerProcessor extends AbstractProcessor {
         .addMethod(registerMethod.build());
   }
 
-  private IntList buildHandlerMethod0(TypeSpecInfo info,
+  private void buildHandlerMethod0(TypeSpecInfo info,
       MethodSpec.Builder registerMethod) {
-    IntList intList = new IntArrayList();
+
     for (ExecutableElement element : info.methods) {
       final int id = Util.calcProtoId(info.typeElement, element);
       Name methodName = element.getSimpleName();
@@ -271,9 +269,8 @@ public class RpcHandlerProcessor extends AbstractProcessor {
 
       info.builder.addMethod(methodBuilder.build());
 
-      intList.add(id);
+
     }
-    return intList;
   }
 
   /**
@@ -289,8 +286,9 @@ public class RpcHandlerProcessor extends AbstractProcessor {
 
     CodeBlock.Builder codeBlock = CodeBlock.builder();
     if (hasReturnValue(executableElement)) {
-      String resVarName = "res";
-      String resBuf = "resBuf";
+      final String resVarName = "res";
+      final String resBufVarName = "resBuf";
+      final String starVarName = "start";
       TypeMirror returnTypeMirror = executableElement.getReturnType();
       switch (returnTypeMirror.getKind()) {
         case BOOLEAN ->
@@ -318,15 +316,20 @@ public class RpcHandlerProcessor extends AbstractProcessor {
 
       codeBlock
           .add("\n")
-          .addStatement("$T $L = $T.DEFAULT.buffer()", BYTE_BUF, resBuf, Util.POOLED_UTIL)
+          .addStatement("$T $L = $T.DEFAULT.buffer()", BYTE_BUF, resBufVarName, Util.POOLED_UTIL)
           .beginControlFlow("try")
-          .addStatement("$L.writeVarInt32($L, $L)", SERIALIZER_VAR_NAME, resBuf, MSG_ID_VAR_NAME)
-          .addStatement("$L.serialize($L, $L)", SERIALIZER_VAR_NAME, resBuf, resVarName)
-          .addStatement("$L.channel().writeAndFlush($T.callBack($L))", CONNECTION_VAR_NAME,
-              MESSAGE_CLASS_NAME, resBuf)
+          .addStatement("final int $L = $L.writerIndex()", starVarName, resBufVarName)
+          .addStatement("$L.writerIndex($L + Integer.BYTES)", resBufVarName, starVarName)
+          .addStatement("$L.writeVarInt32($L, 0)", SERIALIZER_VAR_NAME, resBufVarName)
+          .addStatement("$L.writeVarInt32($L, $L)", SERIALIZER_VAR_NAME, resBufVarName,
+              MSG_ID_VAR_NAME)
+          .addStatement("$L.serialize($L, $L)", SERIALIZER_VAR_NAME, resBufVarName, resVarName)
+          .addStatement("$L.setInt($L, $L.readableBytes())", resBufVarName, starVarName,
+              resBufVarName)
+          .addStatement("$L.channel().writeAndFlush($L)", CONNECTION_VAR_NAME, resBufVarName)
           .endControlFlow()
           .beginControlFlow("catch (Throwable t)")
-          .addStatement("$T.release($L)", ReferenceCountUtil.class, resBuf)
+          .addStatement("$T.release($L)", ReferenceCountUtil.class, resBufVarName)
           .addStatement("throw t")
           .endControlFlow();
 
